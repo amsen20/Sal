@@ -1,5 +1,5 @@
 import ast
-from typing import List
+from typing import List, Dict
 
 class FunctionState:
 
@@ -8,7 +8,7 @@ class FunctionState:
         self.name = fdef.name
         self.fdef = fdef
 
-def get_functions_state(functions: List[ast.FunctionDef]) -> List[FunctionState]:
+def get_functions_state(functions: List[ast.FunctionDef]) -> Dict[str, FunctionState]:
     ret = {}
     id = 100 # do it smarter
     for function in functions:

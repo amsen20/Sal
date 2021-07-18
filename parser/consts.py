@@ -1,0 +1,2 @@
+MAX_WIRE_ID = (1 << 32)
+RESERVED_WIRE_IDS = set()

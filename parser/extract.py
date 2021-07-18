@@ -1,11 +1,12 @@
 import ast
-from state import get_functions_state
+from typing import List
+from state.function_state import get_functions_state
 
 class ModuleImp:
     subnode_types = [ast.FunctionDef]
 
     @classmethod
-    def get_functions_data(cls, node: ast.Module):
+    def get_functions_data(cls, node: ast.Module) -> List[ast.FunctionDef]:
         functions_data = []
         for subnode in node.body:
             if isinstance(subnode, ast.FunctionDef):
