@@ -1,0 +1,2 @@
+class NotAllowedSubnode(Exception):
+    pass
