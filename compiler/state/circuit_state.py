@@ -1,3 +1,4 @@
+from local_types import VarName, WireId, Id, Environment
 from consts import END_GATE_ID
 from consts import OUT_GATE_ID
 from utils import get_wire_bytearray
@@ -8,15 +9,15 @@ from typing import Dict, List
 class Gate:
     def __init__(
         self,
-        id: int,
-        name: str,
-        fan_in: List[int],
-        fan_out: List[int]
+        id: Id,
+        name: VarName,
+        fan_in: List[WireId],
+        fan_out: List[WireId]
     ) -> None:
         self.id = id
-        self.name: str = name
-        self.fan_in: List[int] = fan_in
-        self.fan_out: List[int] = fan_out
+        self.name: VarName = name
+        self.fan_in: List[WireId] = fan_in
+        self.fan_out: List[WireId] = fan_out
     
     def get_code(self) -> bytearray:
         code = get_function_bytearray(self.id)
@@ -28,11 +29,11 @@ class Gate:
 
 class CircuitState:
     def __init__(self) -> None:
-        self.var_to_wire = {}
+        self.var_to_wire: Dict[VarName, WireId] = {}
         # For now we think there is only one output
-        self.functions_state: Dict[str, FunctionState] = {}
-        self.in_to_wire: Dict[str, int] = {}
-        self.out_wires: List[int] = []
+        self.functions_state: Dict[VarName, FunctionState] = {}
+        self.in_to_wire: Environment = {}
+        self.out_wires: List[WireId] = []
         self.gate_list: List[Gate] = []
         self.code: bytearray = bytearray()
     

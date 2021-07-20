@@ -5,9 +5,9 @@ from state.circuit_state import get_out_gate
 from utils import get_wire_bytearray, get_function_bytearray
 from gen.wire import get_new_id
 from state.circuit_state import CircuitState
-from utils import is_allowed
+from utils import is_allowed, merge_envs
 from decorators import register_impl, type_to_class
-from typing import List
+from typing import List, Tuple
 from state.function_state import get_functions_state
 from extract import NotAllowedSubnode
 
@@ -49,13 +49,14 @@ class FunctionDefImpl:
         inherit_state: CircuitState # TODO define state for each node type
     ) -> CircuitState:
         circuit_state = CircuitState()
-        circuit_state.functions_state = inherit_state.functions_state
+        circuit_state.functions_state = deepcopy(inherit_state.functions_state)
         fstate = circuit_state.functions_state[node.name]
         circuit_state.code = get_function_bytearray(fstate.id)
         circuit_state.code += len(fstate.args).to_bytes(1, "big")
         for arg in fstate.args:
             wire_id = get_new_id()
             circuit_state.in_to_wire[arg] = wire_id
+            circuit_state.var_to_wire[arg] = wire_id
             circuit_state.code += get_wire_bytearray(wire_id)
         circuit_state.code += b'\x01' # number of outputs
 
@@ -64,6 +65,10 @@ class FunctionDefImpl:
                 raise NotAllowedSubnode
             impl = type_to_class[type(subnode)]
             subnode_circuit_state: CircuitState = impl.extract(subnode, circuit_state)
+            circuit_state.var_to_wire = merge_envs(
+                circuit_state.var_to_wire,
+                subnode_circuit_state.var_to_wire
+            )
             circuit_state.code += subnode_circuit_state.code
             circuit_state.out_wires += subnode_circuit_state.out_wires
             circuit_state.gate_list += subnode_circuit_state.gate_list
@@ -72,6 +77,36 @@ class FunctionDefImpl:
         circuit_state.add_gate(END_GATE)
 
         return circuit_state
+
+@register_impl(type=ast.Assign)
+class AssignImp:
+    subnode_allowed_types = {ast.BinOp, ast.Expr}
+
+    @classmethod
+    def extract(
+        cls,
+        node: ast.Assign,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        circuit_state = CircuitState()
+        circuit_state.functions_state = deepcopy(inherit_state.functions_state)
+        circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire) # Should not modify inherit state
+        
+        assert len(node.targets) == 1 # TODO support more than one inputs
+        
+        target = node.targets[0].id
+        subnode = node.value
+        if not is_allowed(cls, subnode):
+            raise NotAllowedSubnode
+        impl = type_to_class[type(subnode)]
+        subnode_circuit_state, output_wire = impl.extract(subnode, circuit_state)
+        
+        circuit_state.var_to_wire[target] = output_wire
+        circuit_state.gate_list += subnode_circuit_state.gate_list
+        circuit_state.code += subnode_circuit_state.code
+
+        return circuit_state
+
 
 def extract(c_ast):
     functions = ModuleImp.get_functions(c_ast)

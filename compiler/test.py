@@ -1,2 +1,1 @@
-def main(a, b):
-    return 1+2
+a = b + c
