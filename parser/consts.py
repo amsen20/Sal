@@ -2,4 +2,10 @@ MAX_WIRE_ID = (1 << 32)
 RESERVED_WIRE_IDS = set()
 
 MAX_FUNCTION_ID = (1 << 32)
-RESERVED_FUNCTION_IDS = set()
+
+END_GATE_ID = 0
+OUT_GATE_ID = 1
+RESERVED_FUNCTION_IDS = {
+    0: 'end',
+    1: 'out'
+}

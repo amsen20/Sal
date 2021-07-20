@@ -1,11 +1,12 @@
 import random
-from consts import MAX_WIRE_ID, RESERVED_WIRE_IDS
+from consts import MAX_FUNCTION_ID, RESERVED_FUNCTION_IDS
 
-wire_ids = set()
+function_ids = RESERVED_FUNCTION_IDS
 
-def get_new_id():
+def get_new_id(name: str) -> int:
     while True:
-        new_id = random.randint(0, MAX_WIRE_ID) # do it smarter
-        if new_id in RESERVED_WIRE_IDS and new_id in wire_ids:
+        new_id = random.randint(0, MAX_FUNCTION_ID) # do it smarter
+        if new_id in function_ids:
             continue
+        function_ids[name] = new_id
         return new_id

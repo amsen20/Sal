@@ -6,3 +6,9 @@ def is_allowed(cls, obj):
     except: # TODO
         pass
     return False
+
+def get_wire_bytearray(id: int) -> bytearray:
+    return id.to_bytes(4, "big")
+
+def get_function_bytearray(id: int) -> bytearray:
+    return id.to_bytes(4, "big")

@@ -1,5 +1,4 @@
-import typing
-
+from typing import Dict
 
 type_to_class = {}
 
