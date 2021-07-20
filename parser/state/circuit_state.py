@@ -4,8 +4,11 @@ class CircuitState:
     def __init__(self) -> None:
         self.var_to_wire = {}
         # For now we think there is only one output
-        self.out = {}
+        self.functions_state = {}
+        self.in_to_wire = {}
+        self.out_wires = []
         self.gate_list = []
+        self.code = bytearray()
     
     # TODO write bytes from circuits
     def compile(self) -> bytes:

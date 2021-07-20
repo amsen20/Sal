@@ -7,6 +7,7 @@ class FunctionState:
         self.id = id
         self.name = fdef.name
         self.fdef = fdef
+        self.args = [it.arg for it in fdef.args.args]
 
 def get_functions_state(functions: List[ast.FunctionDef]) -> Dict[str, FunctionState]:
     ret = {}
