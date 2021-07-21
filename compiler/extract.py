@@ -1,6 +1,6 @@
 import ast
 from copy import deepcopy
-from state.circuit_state import END_GATE
+from state.circuit_state import END_GATE, get_bin_op_gate
 from state.circuit_state import get_out_gate
 from utils import get_wire_bytearray, get_function_bytearray
 from gen.wire import get_new_id
@@ -80,7 +80,7 @@ class FunctionDefImpl:
 
 @register_impl(type=ast.Assign)
 class AssignImp:
-    subnode_allowed_types = {ast.BinOp, ast.Expr}
+    subnode_allowed_types = {ast.BinOp, ast.Expr, ast.Constant}
 
     @classmethod
     def extract(
@@ -106,6 +106,40 @@ class AssignImp:
         circuit_state.code += subnode_circuit_state.code
 
         return circuit_state
+
+@register_impl(type=ast.BinOp)
+class BinOpImpl:
+    subnode_allowed_types = {ast.BinOp, ast.Constant}
+
+    @classmethod
+    def extract(
+        cls,
+        node: ast.BinOp,
+        inherit_state: CircuitState
+    ) -> Tuple[CircuitState, int]:
+        circuit_state = CircuitState()
+        circuit_state.functions_state = deepcopy(inherit_state.functions_state)
+        circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
+        
+        left = node.left
+        right = node.right
+        subnodes = [left, right]
+        subnodes_data: List[Tuple[CircuitState, int]] = []
+        
+        for subnode in subnodes:
+            impl = type_to_class[type(subnode)]
+            subnode_circuit_state, output_wire = impl.extract(subnode, circuit_state)
+            subnodes_data.append((subnode_circuit_state, output_wire))
+        
+        for cs, _ in subnodes_data:
+            circuit_state.gate_list += cs.gate_list
+            circuit_state.code += cs.code
+        output_wire = get_new_id()
+        circuit_state.add_gate(
+            get_bin_op_gate(node.op, output_wire, subnodes_data[0][1], subnodes_data[1][1])
+        )
+
+        return circuit_state, output_wire
 
 
 def extract(c_ast):

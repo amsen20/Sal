@@ -1,5 +1,5 @@
 from local_types import VarName, WireId, Id, Environment
-from consts import END_GATE_ID
+from consts import END_GATE_ID, BIN_OP_CODE
 from consts import OUT_GATE_ID
 from utils import get_wire_bytearray
 from utils import get_function_bytearray
@@ -45,3 +45,6 @@ END_GATE = Gate(END_GATE_ID, "end", [], [])
 
 def get_out_gate(wire): 
     return Gate(OUT_GATE_ID, "out", wire, [])
+
+def get_bin_op_gate(op, out_wire, in1_wire, in2_wire):
+    return get_function_bytearray(BIN_OP_CODE[op]) + get_wire_bytearray(in1_wire) + get_wire_bytearray(in2_wire) + get_wire_bytearray(out_wire)
