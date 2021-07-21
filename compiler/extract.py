@@ -1,6 +1,6 @@
 import ast
 from copy import deepcopy
-from state.circuit_state import END_GATE, get_bin_op_gate
+from state.circuit_state import END_GATE, get_bin_op_gate, get_constant_gate
 from state.circuit_state import get_out_gate
 from utils import get_wire_bytearray, get_function_bytearray
 from gen.wire import get_new_id
@@ -127,6 +127,8 @@ class BinOpImpl:
         subnodes_data: List[Tuple[CircuitState, int]] = []
         
         for subnode in subnodes:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
             impl = type_to_class[type(subnode)]
             subnode_circuit_state, output_wire = impl.extract(subnode, circuit_state)
             subnodes_data.append((subnode_circuit_state, output_wire))
@@ -137,6 +139,28 @@ class BinOpImpl:
         output_wire = get_new_id()
         circuit_state.add_gate(
             get_bin_op_gate(node.op, output_wire, subnodes_data[0][1], subnodes_data[1][1])
+        )
+
+        return circuit_state, output_wire
+
+@register_impl(type=ast.Constant)
+class ConstantImpl:
+    subnode_allowed_types = {int}
+
+    @classmethod
+    def extract(
+        cls,
+        node: ast.Constant,
+        inherit_state: CircuitState
+    ) -> Tuple[CircuitState, int]:
+        if not is_allowed(cls, node.value):
+            raise NotAllowedSubnode
+
+        circuit_state = CircuitState()
+
+        output_wire = get_new_id()
+        circuit_state.add_gate(
+            get_constant_gate(node.value, output_wire)
         )
 
         return circuit_state, output_wire

@@ -7,9 +7,12 @@ MAX_FUNCTION_ID = (1 << 32)
 
 END_GATE_ID = 0
 OUT_GATE_ID = 1
+CONSTANT_GATE_ID = 2
+
 RESERVED_FUNCTION_IDS = {
     0: 'end',
     1: 'out',
+    2: 'const',
     10: 'add',
     11: 'mult',
     12: 'div',
@@ -23,4 +26,8 @@ BIN_OP_CODE = {
     ast.Div: 12,
     ast.Sub: 13,
     ast.Pow: 14
+}
+
+SIZEOF = {
+    int: 4
 }

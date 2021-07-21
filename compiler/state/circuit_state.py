@@ -1,5 +1,5 @@
-from local_types import VarName, WireId, Id, Environment
-from consts import END_GATE_ID, BIN_OP_CODE
+from local_types import VarName, WireId, Id, Environment, FunctionName
+from consts import END_GATE_ID, BIN_OP_CODE, RESERVED_FUNCTION_IDS, SIZEOF, CONSTANT_GATE_ID
 from consts import OUT_GATE_ID
 from utils import get_wire_bytearray
 from utils import get_function_bytearray
@@ -10,19 +10,19 @@ class Gate:
     def __init__(
         self,
         id: Id,
-        name: VarName,
+        name: FunctionName,
         fan_in: List[WireId],
         fan_out: List[WireId]
     ) -> None:
         self.id = id
-        self.name: VarName = name
+        self.name: FunctionName = name
         self.fan_in: List[WireId] = fan_in
         self.fan_out: List[WireId] = fan_out
     
     def get_code(self) -> bytearray:
         code = get_function_bytearray(self.id)
         for wire_in in self.fan_in:
-            code += get_wire_bytearray(wire_in)
+            code += get_wire_bytearray(wire_in) # Add features for constant values
         for wire_out in self.fan_out:
             code += get_wire_bytearray(wire_out)
         return code
@@ -47,4 +47,8 @@ def get_out_gate(wire):
     return Gate(OUT_GATE_ID, "out", wire, [])
 
 def get_bin_op_gate(op, out_wire, in1_wire, in2_wire):
-    return get_function_bytearray(BIN_OP_CODE[op]) + get_wire_bytearray(in1_wire) + get_wire_bytearray(in2_wire) + get_wire_bytearray(out_wire)
+    func_id = BIN_OP_CODE[op]
+    return Gate(func_id, RESERVED_FUNCTION_IDS[func_id], [in1_wire, in2_wire], [out_wire])
+
+def get_constant_gate(value, out_wire):
+    return Gate(CONSTANT_GATE_ID, "const", [SIZEOF[type(value)], value], out_wire)
