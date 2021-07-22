@@ -9,7 +9,7 @@ from utils import is_allowed, merge_envs
 from decorators import register_impl, type_to_class
 from typing import List, Tuple
 from state.function_state import get_functions_state
-from extract import NotAllowedSubnode
+from exceptions import NotAllowedSubnode
 
 @register_impl(type=ast.Module)
 class ModuleImp:
@@ -35,7 +35,11 @@ class ModuleImp:
             if not is_allowed(cls, subnode):
                 raise NotAllowedSubnode
             impl = type_to_class[type(subnode)]
-            circuit_state.code += impl.extract(subnode, circuit_state).code
+            subnode_cs = impl.extract(subnode, circuit_state)
+            
+            circuit_state.gate_list += subnode_cs.gate_list
+            circuit_state.code += subnode_cs.code
+
         return circuit_state
             
 @register_impl(type=ast.FunctionDef)
@@ -79,7 +83,7 @@ class FunctionDefImpl:
 
 @register_impl(type=ast.Assign)
 class AssignImp:
-    subnode_allowed_types = {ast.BinOp, ast.Expr, ast.Constant}
+    subnode_allowed_types = {ast.BinOp, ast.Expr, ast.Constant, ast.Name}
 
     @classmethod
     def extract(
@@ -107,7 +111,7 @@ class AssignImp:
 
 @register_impl(type=ast.BinOp)
 class BinOpImpl:
-    subnode_allowed_types = {ast.BinOp, ast.Constant}
+    subnode_allowed_types = {ast.BinOp, ast.Constant, ast.Name}
 
     @classmethod
     def extract(
@@ -165,7 +169,7 @@ class ConstantImpl:
 
 @register_impl(type=ast.Return)
 class ReturnImpl:
-    subnode_allowed_types = {ast.Expr, ast.BinOp}
+    subnode_allowed_types = {ast.Expr, ast.BinOp, ast.Name}
 
     @classmethod
     def extract(
@@ -187,9 +191,23 @@ class ReturnImpl:
 
         return circuit_state
 
+@register_impl(type=ast.Name)
+class NameImpl:
+    subnode_allowed_types = {}
+
+    @classmethod
+    def extract(
+        cls,
+        node: ast.Name,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        circuit_state = CircuitState()
+        circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
+
+        return circuit_state, circuit_state.var_to_wire[node.id]
 
 def extract(c_ast):
-    functions = ModuleImp.get_functions(c_ast)
-    f_state = get_functions_state(functions)
-    ModuleImp.extract(c_ast, f_state)
-    # TODO extract the program
+    functions = ModuleImp.get_functions_data(c_ast)
+    circuit_state = CircuitState()
+    circuit_state.functions_state = get_functions_state(functions)
+    return ModuleImp.extract(c_ast,  circuit_state).code
