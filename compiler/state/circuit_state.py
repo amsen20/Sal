@@ -29,9 +29,9 @@ class Gate:
 
 class CircuitState:
     def __init__(self) -> None:
-        self.var_to_wire: Dict[VarName, WireId] = {}
+        self.var_to_wire: Environment = {}
         # For now we think there is only one output
-        self.functions_state: Dict[VarName, FunctionState] = {}
+        self.functions_state: Dict[FunctionName, FunctionState] = {}
         self.in_to_wire: Environment = {}
         self.out_wires: List[WireId] = []
         self.gate_list: List[Gate] = []

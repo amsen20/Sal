@@ -166,6 +166,32 @@ class ConstantImpl:
         return circuit_state, output_wire
 
 
+@register_impl(type=ast.Return)
+class ReturnImpl:
+    subnode_allowed_types = {ast.Expr, ast.BinOp}
+
+    @classmethod
+    def extract(
+        cls,
+        node: ast.Return,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        subnode = node.value
+        if not is_allowed(cls, subnode):
+            raise NotAllowedSubnode
+        circuit_state = CircuitState()
+        circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
+
+        impl = type_to_class[type(subnode)]
+        subnode_cs, output_wire = impl.extract(subnode, circuit_state)
+
+        circuit_state.gate_list += subnode_cs.gate_list
+        circuit_state.code += subnode_cs.code
+        circuit_state.out_wires.append(output_wire)
+
+        return circuit_state
+
+
 def extract(c_ast):
     functions = ModuleImp.get_functions(c_ast)
     f_state = get_functions_state(functions)
