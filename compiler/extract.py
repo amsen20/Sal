@@ -69,9 +69,8 @@ class FunctionDefImpl:
                 circuit_state.var_to_wire,
                 subnode_circuit_state.var_to_wire
             )
-            circuit_state.code += subnode_circuit_state.code
+            circuit_state.add_gates(subnode_circuit_state.gate_list)
             circuit_state.out_wires += subnode_circuit_state.out_wires
-            circuit_state.gate_list += subnode_circuit_state.gate_list
         for wire_out in circuit_state.out_wires:
             circuit_state.add_gate(get_out_gate(wire_out))
         circuit_state.add_gate(END_GATE)
@@ -102,8 +101,7 @@ class AssignImp:
         subnode_circuit_state, output_wire = impl.extract(subnode, circuit_state)
         
         circuit_state.var_to_wire[target] = output_wire
-        circuit_state.gate_list += subnode_circuit_state.gate_list
-        circuit_state.code += subnode_circuit_state.code
+        circuit_state.add_gates(subnode_circuit_state.gate_list)
 
         return circuit_state
 
@@ -134,8 +132,7 @@ class BinOpImpl:
             subnodes_data.append((subnode_circuit_state, output_wire))
         
         for cs, _ in subnodes_data:
-            circuit_state.gate_list += cs.gate_list
-            circuit_state.code += cs.code
+            circuit_state.add_gates(cs.gate_list)
         output_wire = get_new_id()
         circuit_state.add_gate(
             get_bin_op_gate(node.op, output_wire, subnodes_data[0][1], subnodes_data[1][1])
@@ -185,8 +182,7 @@ class ReturnImpl:
         impl = type_to_class[type(subnode)]
         subnode_cs, output_wire = impl.extract(subnode, circuit_state)
 
-        circuit_state.gate_list += subnode_cs.gate_list
-        circuit_state.code += subnode_cs.code
+        circuit_state.add_gates(subnode_cs.gate_list)
         circuit_state.out_wires.append(output_wire)
 
         return circuit_state

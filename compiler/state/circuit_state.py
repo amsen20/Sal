@@ -40,6 +40,10 @@ class CircuitState:
     def add_gate(self, gate: Gate):
         self.gate_list.append(gate)
         self.code += gate.get_code()
+    
+    def add_gates(self, gates: List[Gate]):
+        for gate in gates:
+            self.add_gate(gate)
 
 END_GATE = Gate(END_GATE_ID, "end", [], [])
 
