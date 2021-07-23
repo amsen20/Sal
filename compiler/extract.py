@@ -1,7 +1,7 @@
 import ast
 from copy import deepcopy
 from state.circuit_state import END_GATE, get_bin_op_gate, get_constant_gate
-from state.circuit_state import get_out_gate
+from state.circuit_state import get_out_gate, Gate
 from utils import get_wire_bytearray, get_function_bytearray
 from gen.wire import get_new_id
 from state.circuit_state import CircuitState
@@ -205,6 +205,39 @@ class NameImpl:
         circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
 
         return circuit_state, circuit_state.var_to_wire[node.id]
+
+@register_impl(type=ast.Call)
+class CallImpl:
+    subnode_allowed_types = {ast.Call, ast.Constant, ast.BinOp, ast.Name}
+
+    @classmethod
+    def extract(
+        cls,
+        node: ast.Call,
+        inherit_state: CircuitState
+    ) -> Tuple[CircuitState, int]:
+        circuit_state = CircuitState()
+        circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
+        circuit_state.functions_state = deepcopy(inherit_state.functions_state)
+        output_args = []
+        for arg in node.args:
+            if not is_allowed(cls, arg):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(arg)]
+            arg_circuit_state, arg_output_wire = impl.extract(arg, circuit_state)
+            circuit_state.add_gates(arg_circuit_state.gates_list)
+            output_args.append(arg_output_wire)
+        output_wire = get_new_id()
+        func_id = circuit_state.functions_state[node.func.id].id
+        circuit_state.add_gate(
+            Gate(
+                func_id,
+                node.func.id,
+                output_args,
+                [output_wire]
+            )
+        )
+        return circuit_state, output_wire
 
 def extract(c_ast):
     functions = ModuleImp.get_functions_data(c_ast)
