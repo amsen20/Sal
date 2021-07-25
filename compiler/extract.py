@@ -68,7 +68,7 @@ class FunctionDefImpl:
             if not is_allowed(cls, subnode):
                 raise NotAllowedSubnode
             impl = type_to_class[type(subnode)]
-            subnode_circuit_state: CircuitState = impl.extract(subnode, circuit_state)
+            subnode_circuit_state: CircuitState = impl.extract(subnode, circuit_state) # TODO check if finished
             circuit_state.var_to_wire = merge_envs(
                 circuit_state.var_to_wire,
                 subnode_circuit_state.var_to_wire
@@ -169,7 +169,7 @@ class ConstantImpl:
 
 @register_impl(type=ast.Return)
 class ReturnImpl:
-    subnode_allowed_types = {ast.Expr, ast.BinOp, ast.Name}
+    subnode_allowed_types = {ast.BinOp, ast.Name}
 
     @classmethod
     def extract(
@@ -181,6 +181,7 @@ class ReturnImpl:
         if not is_allowed(cls, subnode):
             raise NotAllowedSubnode
         circuit_state = CircuitState()
+        # TODO copy functions_state
         circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
 
         impl = type_to_class[type(subnode)]
@@ -200,7 +201,7 @@ class NameImpl:
         cls,
         node: ast.Name,
         inherit_state: CircuitState
-    ) -> CircuitState:
+    ) -> Tuple[CircuitState, int]:
         circuit_state = CircuitState()
         circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
 
@@ -210,4 +211,6 @@ def extract(c_ast):
     functions = ModuleImp.get_functions_data(c_ast)
     circuit_state = CircuitState()
     circuit_state.functions_state = get_functions_state(functions)
-    return ModuleImp.extract(c_ast,  circuit_state).code
+    final_cs = ModuleImp.extract(c_ast,  circuit_state)
+    print([str(gate) for gate in final_cs.gate_list])
+    return final_cs.code

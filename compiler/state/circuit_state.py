@@ -26,6 +26,9 @@ class Gate:
         for wire_out in self.fan_out:
             code += get_wire_bytearray(wire_out)
         return code
+    
+    def __str__(self) -> str:
+        return f"id: {self.id}, name: {self.name}, inputs: {self.fan_in}, outputs: {self.fan_out}"
 
 class CircuitState:
     def __init__(self) -> None:
@@ -48,11 +51,11 @@ class CircuitState:
 END_GATE = Gate(END_GATE_ID, "end", [], [])
 
 def get_out_gate(wire): 
-    return Gate(OUT_GATE_ID, "out", wire, [])
+    return Gate(OUT_GATE_ID, "out", [wire], [])
 
 def get_bin_op_gate(op, out_wire, in1_wire, in2_wire):
-    func_id = BIN_OP_CODE[op]
+    func_id = BIN_OP_CODE[type(op)]
     return Gate(func_id, RESERVED_FUNCTION_IDS[func_id], [in1_wire, in2_wire], [out_wire])
 
 def get_constant_gate(value, out_wire):
-    return Gate(CONSTANT_GATE_ID, "const", [SIZEOF[type(value)], value], out_wire)
+    return Gate(CONSTANT_GATE_ID, "const", [SIZEOF[type(value)], value], [out_wire])
