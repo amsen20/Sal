@@ -39,6 +39,9 @@ class CircuitState:
         self.out_wires: List[WireId] = []
         self.gate_list: List[Gate] = []
         self.code: bytearray = bytearray()
+
+        # For states which have output
+        self.output_wire: WireId = None
     
     def add_gate(self, gate: Gate):
         self.gate_list.append(gate)

@@ -102,9 +102,9 @@ class AssignImp:
         if not is_allowed(cls, subnode):
             raise NotAllowedSubnode
         impl = type_to_class[type(subnode)]
-        subnode_circuit_state, output_wire = impl.extract(subnode, circuit_state)
+        subnode_circuit_state = impl.extract(subnode, circuit_state)
         
-        circuit_state.var_to_wire[target] = output_wire
+        circuit_state.var_to_wire[target] = subnode_circuit_state.output_wire
         circuit_state.add_gates(subnode_circuit_state.gate_list)
 
         return circuit_state
@@ -118,7 +118,7 @@ class BinOpImpl:
         cls,
         node: ast.BinOp,
         inherit_state: CircuitState
-    ) -> Tuple[CircuitState, int]:
+    ) -> CircuitState:
         circuit_state = CircuitState()
         circuit_state.functions_state = deepcopy(inherit_state.functions_state)
         circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
@@ -126,23 +126,25 @@ class BinOpImpl:
         left = node.left
         right = node.right
         subnodes = [left, right]
-        subnodes_data: List[Tuple[CircuitState, int]] = []
+        subnodes_data: List[CircuitState] = []
         
         for subnode in subnodes:
             if not is_allowed(cls, subnode):
                 raise NotAllowedSubnode
             impl = type_to_class[type(subnode)]
-            subnode_circuit_state, output_wire = impl.extract(subnode, circuit_state)
-            subnodes_data.append((subnode_circuit_state, output_wire))
+            subnode_circuit_state = impl.extract(subnode, circuit_state)
+            output_wire  = subnode_circuit_state.output_wire
+            subnodes_data.append(subnode_circuit_state)
         
-        for cs, _ in subnodes_data:
+        for cs in subnodes_data:
             circuit_state.add_gates(cs.gate_list)
         output_wire = get_new_id()
         circuit_state.add_gate(
-            get_bin_op_gate(node.op, output_wire, subnodes_data[0][1], subnodes_data[1][1])
+            get_bin_op_gate(node.op, output_wire, subnodes_data[0].output_wire, subnodes_data[1].output_wire)
         )
+        circuit_state.output_wire = output_wire
 
-        return circuit_state, output_wire
+        return circuit_state
 
 @register_impl(type=ast.Constant)
 class ConstantImpl:
@@ -153,7 +155,7 @@ class ConstantImpl:
         cls,
         node: ast.Constant,
         inherit_state: CircuitState
-    ) -> Tuple[CircuitState, int]:
+    ) -> CircuitState:
         if not is_allowed(cls, node.value):
             raise NotAllowedSubnode
 
@@ -163,8 +165,9 @@ class ConstantImpl:
         circuit_state.add_gate(
             get_constant_gate(node.value, output_wire)
         )
+        circuit_state.output_wire = output_wire
 
-        return circuit_state, output_wire
+        return circuit_state
 
 
 @register_impl(type=ast.Return)
@@ -185,10 +188,10 @@ class ReturnImpl:
         circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
 
         impl = type_to_class[type(subnode)]
-        subnode_cs, output_wire = impl.extract(subnode, circuit_state)
+        subnode_cs = impl.extract(subnode, circuit_state)
 
         circuit_state.add_gates(subnode_cs.gate_list)
-        circuit_state.out_wires.append(output_wire)
+        circuit_state.out_wires.append(subnode_cs.output_wire)
 
         return circuit_state
 
@@ -201,11 +204,12 @@ class NameImpl:
         cls,
         node: ast.Name,
         inherit_state: CircuitState
-    ) -> Tuple[CircuitState, int]:
+    ) -> CircuitState:
         circuit_state = CircuitState()
         circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
 
-        return circuit_state, circuit_state.var_to_wire[node.id]
+        circuit_state.output_wire = circuit_state.var_to_wire[node.id]
+        return circuit_state
 
 @register_impl(type=ast.Call)
 class CallImpl:
@@ -216,7 +220,7 @@ class CallImpl:
         cls,
         node: ast.Call,
         inherit_state: CircuitState
-    ) -> Tuple[CircuitState, int]:
+    ) -> CircuitState:
         circuit_state = CircuitState()
         circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
         circuit_state.functions_state = deepcopy(inherit_state.functions_state)
@@ -225,7 +229,8 @@ class CallImpl:
             if not is_allowed(cls, arg):
                 raise NotAllowedSubnode
             impl = type_to_class[type(arg)]
-            arg_circuit_state, arg_output_wire = impl.extract(arg, circuit_state)
+            arg_circuit_state = impl.extract(arg, circuit_state)
+            arg_output_wire = arg_circuit_state.output_wire
             circuit_state.add_gates(arg_circuit_state.gate_list)
             output_args.append(arg_output_wire)
         output_wire = get_new_id()
@@ -238,7 +243,9 @@ class CallImpl:
                 [output_wire]
             )
         )
-        return circuit_state, output_wire
+        circuit_state.output_wire = output_wire
+
+        return circuit_state
 
 def extract(c_ast):
     functions = ModuleImp.get_functions_data(c_ast)
