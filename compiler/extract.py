@@ -25,12 +25,20 @@ class ModuleImp:
         return functions_data
     
     @classmethod
+    def clone_inherit_state(
+        cls,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        return deepcopy(inherit_state)
+
+    @classmethod
     def extract(
         cls,
         node: ast.Module,
         inherit_state: CircuitState
     ) -> CircuitState:
-        circuit_state = deepcopy(inherit_state)
+        circuit_state = cls.clone_inherit_state(inherit_state)
+
         for subnode in node.body:
             if not is_allowed(cls, subnode):
                 raise NotAllowedSubnode
@@ -47,13 +55,23 @@ class FunctionDefImpl:
     subnode_allowed_types = {ast.Assign, ast.Return}
 
     @classmethod
+    def clone_inherit_state(
+        cls,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        circuit_state = CircuitState()
+        circuit_state.functions_state = deepcopy(inherit_state.functions_state)
+
+        return circuit_state
+
+    @classmethod
     def extract(
         cls,
         node: ast.FunctionDef,
         inherit_state: CircuitState # TODO define state for each node type
     ) -> CircuitState:
-        circuit_state = CircuitState()
-        circuit_state.functions_state = deepcopy(inherit_state.functions_state)
+        circuit_state = cls.clone_inherit_state(inherit_state)
+
         fstate = circuit_state.functions_state[node.name]
         circuit_state.code = get_function_bytearray(fstate.id)
         circuit_state.code += len(fstate.args).to_bytes(1, "big")
@@ -86,14 +104,23 @@ class AssignImp:
     subnode_allowed_types = {ast.BinOp, ast.Constant, ast.Name, ast.Call}
 
     @classmethod
-    def extract(
+    def clone_inherit_state(
         cls,
-        node: ast.Assign,
         inherit_state: CircuitState
     ) -> CircuitState:
         circuit_state = CircuitState()
         circuit_state.functions_state = deepcopy(inherit_state.functions_state)
         circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire) # Should not modify inherit state
+
+        return circuit_state
+
+    @classmethod
+    def extract(
+        cls,
+        node: ast.Assign,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        circuit_state = cls.clone_inherit_state(inherit_state)
         
         assert len(node.targets) == 1 # TODO support multiple assignment
         
@@ -114,14 +141,23 @@ class BinOpImpl:
     subnode_allowed_types = {ast.BinOp, ast.Constant, ast.Name, ast.Call}
 
     @classmethod
-    def extract(
+    def clone_inherit_state(
         cls,
-        node: ast.BinOp,
         inherit_state: CircuitState
     ) -> CircuitState:
         circuit_state = CircuitState()
         circuit_state.functions_state = deepcopy(inherit_state.functions_state)
         circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
+
+        return circuit_state
+
+    @classmethod
+    def extract(
+        cls,
+        node: ast.BinOp,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        circuit_state = cls.clone_inherit_state(inherit_state)
         
         left = node.left
         right = node.right
@@ -151,6 +187,13 @@ class ConstantImpl:
     subnode_allowed_types = {int}
 
     @classmethod
+    def clone_inherit_state(
+        cls,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        return CircuitState()
+
+    @classmethod
     def extract(
         cls,
         node: ast.Constant,
@@ -159,7 +202,7 @@ class ConstantImpl:
         if not is_allowed(cls, node.value):
             raise NotAllowedSubnode
 
-        circuit_state = CircuitState()
+        circuit_state = cls.clone_inherit_state(inherit_state)
 
         output_wire = get_new_id()
         circuit_state.add_gate(
@@ -175,6 +218,17 @@ class ReturnImpl:
     subnode_allowed_types = {ast.BinOp, ast.Name, ast.Call}
 
     @classmethod
+    def clone_inherit_state(
+        cls,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        circuit_state = CircuitState()
+        circuit_state.functions_state = deepcopy(inherit_state.functions_state)
+        circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
+
+        return circuit_state
+
+    @classmethod
     def extract(
         cls,
         node: ast.Return,
@@ -183,9 +237,7 @@ class ReturnImpl:
         subnode = node.value
         if not is_allowed(cls, subnode):
             raise NotAllowedSubnode
-        circuit_state = CircuitState()
-        circuit_state.functions_state = deepcopy(inherit_state.functions_state)
-        circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
+        circuit_state = cls.clone_inherit_state(inherit_state)
 
         impl = type_to_class[type(subnode)]
         subnode_cs = impl.extract(subnode, circuit_state)
@@ -200,13 +252,22 @@ class NameImpl:
     subnode_allowed_types = {}
 
     @classmethod
+    def clone_inherit_state(
+        cls,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        circuit_state = CircuitState()
+        circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
+
+        return circuit_state
+
+    @classmethod
     def extract(
         cls,
         node: ast.Name,
         inherit_state: CircuitState
     ) -> CircuitState:
-        circuit_state = CircuitState()
-        circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
+        circuit_state = cls.clone_inherit_state(inherit_state)
 
         circuit_state.output_wire = circuit_state.var_to_wire[node.id]
         return circuit_state
@@ -216,14 +277,24 @@ class CallImpl:
     subnode_allowed_types = {ast.Call, ast.Constant, ast.BinOp, ast.Name}
 
     @classmethod
-    def extract(
+    def clone_inherit_state(
         cls,
-        node: ast.Call,
         inherit_state: CircuitState
     ) -> CircuitState:
         circuit_state = CircuitState()
         circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
         circuit_state.functions_state = deepcopy(inherit_state.functions_state)
+
+        return circuit_state
+
+    @classmethod
+    def extract(
+        cls,
+        node: ast.Call,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        circuit_state = cls.clone_inherit_state(inherit_state)
+
         output_args = []
         for arg in node.args:
             if not is_allowed(cls, arg):
