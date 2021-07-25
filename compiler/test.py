@@ -1,3 +1,6 @@
+def f(a):
+    return 2*a
+
 def main(a, b):
     c = a + b
-    return 2*c+1
+    return f(c)+1

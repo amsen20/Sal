@@ -83,7 +83,7 @@ class FunctionDefImpl:
 
 @register_impl(type=ast.Assign)
 class AssignImp:
-    subnode_allowed_types = {ast.BinOp, ast.Expr, ast.Constant, ast.Name}
+    subnode_allowed_types = {ast.BinOp, ast.Constant, ast.Name, ast.Call}
 
     @classmethod
     def extract(
@@ -95,7 +95,7 @@ class AssignImp:
         circuit_state.functions_state = deepcopy(inherit_state.functions_state)
         circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire) # Should not modify inherit state
         
-        assert len(node.targets) == 1 # TODO support more than one inputs
+        assert len(node.targets) == 1 # TODO support multiple assignment
         
         target = node.targets[0].id
         subnode = node.value
@@ -111,7 +111,7 @@ class AssignImp:
 
 @register_impl(type=ast.BinOp)
 class BinOpImpl:
-    subnode_allowed_types = {ast.BinOp, ast.Constant, ast.Name}
+    subnode_allowed_types = {ast.BinOp, ast.Constant, ast.Name, ast.Call}
 
     @classmethod
     def extract(
@@ -169,7 +169,7 @@ class ConstantImpl:
 
 @register_impl(type=ast.Return)
 class ReturnImpl:
-    subnode_allowed_types = {ast.BinOp, ast.Name}
+    subnode_allowed_types = {ast.BinOp, ast.Name, ast.Call}
 
     @classmethod
     def extract(
@@ -181,7 +181,7 @@ class ReturnImpl:
         if not is_allowed(cls, subnode):
             raise NotAllowedSubnode
         circuit_state = CircuitState()
-        # TODO copy functions_state
+        circuit_state.functions_state = deepcopy(inherit_state.functions_state)
         circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
 
         impl = type_to_class[type(subnode)]
@@ -226,7 +226,7 @@ class CallImpl:
                 raise NotAllowedSubnode
             impl = type_to_class[type(arg)]
             arg_circuit_state, arg_output_wire = impl.extract(arg, circuit_state)
-            circuit_state.add_gates(arg_circuit_state.gates_list)
+            circuit_state.add_gates(arg_circuit_state.gate_list)
             output_args.append(arg_output_wire)
         output_wire = get_new_id()
         func_id = circuit_state.functions_state[node.func.id].id
