@@ -1,2 +1,2 @@
 # Sal
-An automatic parallelizer interpreter
+An automatic parallelizer JIT
