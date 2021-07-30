@@ -7,7 +7,9 @@
 #include <string>
 #include <memory>
 
-std::string
+const int BUFFER_SIZE = 1024;
+
+std::vector<unsigned char>
 read_code(const char *path);
 
 prestate::box_set

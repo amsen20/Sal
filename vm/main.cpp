@@ -5,10 +5,8 @@
 #include <fstream>
 #include <vector>
 
-int main(int argc, char* argv[])
-{
-    if(argc < 2)
-    {
+int main(int argc, char* argv[]) {
+    if(argc < 2) {
         std::cout << "usage: salvm path/to/salfile\n";
         return 1;
     }
