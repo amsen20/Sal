@@ -11,7 +11,7 @@ namespace prestate {
 
     struct Graph {
         std::vector<std::shared_ptr<Node>> nodes, sinks, sources;
-        std::vector<std::pair<Pin, Value> > initials;
+        std::vector<std::pair<Pin, PRIMITIVE_PTR> > initials;
 
         Graph() {
         }
