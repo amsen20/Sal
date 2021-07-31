@@ -13,3 +13,15 @@ read_code(const char *path) {
 
     return code;
 }
+
+/*
+    <code> = NULL | <code><box desc>
+    <box desc> = <box header><graph desc><end gate>
+    <box header> = <box id><number of inputs><input wires><number of outputs>
+*/
+prestate::box_set
+load_code(const char *path) {
+    auto code = read_code(path);
+
+    
+}
