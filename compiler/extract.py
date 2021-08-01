@@ -170,7 +170,7 @@ class AssignImp:
     ) -> Set[ast.Name]:
         vars: Set[ast.Name] = set()
         for subnode in node.targets:
-            vars.add(subnode)
+            vars.add(subnode.id)
         return vars
 
 @register_impl(type=ast.BinOp)
@@ -313,7 +313,7 @@ class ReturnImpl:
         node: ast.Return
     ) -> Set[ast.Name]:
         vars: Set[ast.Name] = set()
-        for subnode in node.value:
+        for subnode in [node.value]:
             if not is_allowed(cls, subnode):
                 raise NotAllowedSubnode
             impl = type_to_class[type(subnode)]
@@ -418,5 +418,8 @@ def extract(c_ast):
     circuit_state = CircuitState()
     circuit_state.functions_state = get_functions_state(functions)
     final_cs = ModuleImp.extract(c_ast,  circuit_state)
-    print([str(gate) for gate in final_cs.gate_list])
+    #used_vars = ModuleImp.get_defined_vars(c_ast)
+    #for var in used_vars:
+        #print(var)
+    #print([str(gate) for gate in final_cs.gate_list])
     return final_cs.code

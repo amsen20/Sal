@@ -1,3 +1,11 @@
-a = 5
-if a == 1 and a == 3:
-    c = 1
+def ali(a, b):
+    c = a + b
+    c = 7
+    return c
+
+def h(g, f):
+    c = g + f
+    e = ali(g, f) * 3
+    c = 2
+    c = 5
+    return c
