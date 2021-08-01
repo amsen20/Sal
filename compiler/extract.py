@@ -7,7 +7,7 @@ from gen.wire import get_new_id
 from state.circuit_state import CircuitState
 from utils import is_allowed, merge_envs
 from decorators import register_impl, type_to_class
-from typing import List, Tuple
+from typing import List, Tuple, Set
 from state.function_state import get_functions_state
 from exceptions import NotAllowedSubnode
 
@@ -49,6 +49,20 @@ class ModuleImp:
             circuit_state.code += subnode_cs.code
 
         return circuit_state
+    
+    @classmethod
+    def get_defined_vars(
+        cls,
+        node: ast.Module
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_defined_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
             
 @register_impl(type=ast.FunctionDef)
 class FunctionDefImpl:
@@ -96,8 +110,21 @@ class FunctionDefImpl:
         for wire_out in circuit_state.out_wires:
             circuit_state.add_gate(get_out_gate(wire_out))
         circuit_state.add_gate(END_GATE)
-
         return circuit_state
+    @classmethod
+    def get_defined_vars(
+        cls,
+        node: ast.FunctionDef
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_defined_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
+    
 
 @register_impl(type=ast.Assign)
 class AssignImp:
@@ -135,6 +162,16 @@ class AssignImp:
         circuit_state.add_gates(subnode_circuit_state.gate_list)
 
         return circuit_state
+    
+    @classmethod
+    def get_defined_vars(
+        cls,
+        node: ast.Assign
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.targets:
+            vars.add(subnode)
+        return vars
 
 @register_impl(type=ast.BinOp)
 class BinOpImpl:
@@ -181,6 +218,22 @@ class BinOpImpl:
         circuit_state.output_wire = output_wire
 
         return circuit_state
+    @classmethod
+    def get_defined_vars(
+        cls,
+        node: ast.BinOp
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        left = node.left
+        right = node.right
+        subnodes = [left, right]
+        for subnode in subnodes:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_defined_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
 
 @register_impl(type=ast.Constant)
 class ConstantImpl:
@@ -211,6 +264,13 @@ class ConstantImpl:
         circuit_state.output_wire = output_wire
 
         return circuit_state
+    @classmethod
+    def get_defined_vars(
+        cls,
+        node: ast.Constant
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        return vars
 
 
 @register_impl(type=ast.Return)
@@ -246,6 +306,20 @@ class ReturnImpl:
         circuit_state.out_wires.append(subnode_cs.output_wire)
 
         return circuit_state
+    
+    @classmethod
+    def get_defined_vars(
+        cls,
+        node: ast.Return
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.value:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_defined_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
 
 @register_impl(type=ast.Name)
 class NameImpl:
@@ -271,6 +345,14 @@ class NameImpl:
 
         circuit_state.output_wire = circuit_state.var_to_wire[node.id]
         return circuit_state
+    
+    @classmethod
+    def get_defined_vars(
+        cls,
+        node: ast.Name
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        return vars
 
 @register_impl(type=ast.Call)
 class CallImpl:
@@ -317,6 +399,19 @@ class CallImpl:
         circuit_state.output_wire = output_wire
 
         return circuit_state
+    @classmethod
+    def get_defined_vars(
+        cls,
+        node: ast.Call
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.args:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_defined_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
 
 def extract(c_ast):
     functions = ModuleImp.get_functions_data(c_ast)

@@ -1,6 +1,3 @@
-def f(a):
-    return 2*a
-
-def main(a, b):
-    c = a + b
-    return f(c)+1
+a = 5
+if a == 1 and a == 3:
+    c = 1
