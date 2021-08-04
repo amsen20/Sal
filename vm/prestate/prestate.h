@@ -52,8 +52,7 @@ namespace prestate {
         bool controller; // flow control box
         FUNC_ID id;
         
-        std::vector<WIRE_ID> inputs, outputs;
-        std::vector<std::pair<WIRE_ID, INTEGER>> consts;
+        int inputs_sz, outputs_sz, locals_sz;
         std::unique_ptr<Graph> graph;
 
         /*
@@ -75,7 +74,7 @@ namespace prestate {
 
         Node(std::shared_ptr<Box> box, int index=-1, int in_index=-1, int out_index=-1):
             box(box), index(index), in_index(in_index), out_index(out_index) {
-                for(auto output : box->outputs)
+                for(int i=0 ; i<box->outputs_sz ; i++)
                     out.push_back(std::vector<Pin>());
             }
 

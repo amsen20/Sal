@@ -9,6 +9,8 @@ add_subdirectory(concurrentqueue)
 add_subdirectory(prestate)
 add_subdirectory(loader)
 add_subdirectory(vm)
+add_subdirectory(utils)
+add_subdirectory(builtin)
 
 add_executable(salvm main.cpp)
 
