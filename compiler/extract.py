@@ -1,6 +1,6 @@
 import ast
 from copy import deepcopy
-from state.circuit_state import END_GATE, get_bin_op_gate, get_constant_gate
+from state.circuit_state import END_GATE, get_assign_gate, get_bin_op_gate, get_constant_gate
 from state.circuit_state import get_out_gate, Gate
 from utils import get_wire_bytearray, get_function_bytearray
 from gen.wire import get_new_id
@@ -12,7 +12,7 @@ from state.function_state import get_functions_state
 from exceptions import NotAllowedSubnode
 
 @register_impl(type=ast.Module)
-class ModuleImp:
+class ModuleImpl:
     subnode_allowed_types = {ast.FunctionDef}
 
     @classmethod
@@ -89,12 +89,22 @@ class FunctionDefImpl:
         fstate = circuit_state.functions_state[node.name]
         circuit_state.code = get_function_bytearray(fstate.id)
         circuit_state.code += len(fstate.args).to_bytes(1, "big")
+        
         for arg in fstate.args:
             wire_id = get_new_id()
             circuit_state.in_to_wire[arg] = wire_id
             circuit_state.var_to_wire[arg] = wire_id
             circuit_state.code += get_wire_bytearray(wire_id)
+        
         circuit_state.code += b'\x01' # number of outputs
+
+        used_vars = cls.get_defined_vars(node)
+        local_vars = list(filter(lambda x: x not in fstate.args, used_vars))
+        circuit_state.code += len(local_vars).to_bytes(1, "big") # number of local vars
+        for local_var in local_vars:
+            wire_id = get_new_id()
+            circuit_state.var_to_wire[local_var] = wire_id
+            circuit_state.code += get_wire_bytearray(wire_id)
 
         for subnode in node.body:
             if not is_allowed(cls, subnode):
@@ -111,6 +121,7 @@ class FunctionDefImpl:
             circuit_state.add_gate(get_out_gate(wire_out))
         circuit_state.add_gate(END_GATE)
         return circuit_state
+    
     @classmethod
     def get_defined_vars(
         cls,
@@ -158,8 +169,18 @@ class AssignImpl:
         impl = type_to_class[type(subnode)]
         subnode_circuit_state = impl.extract(subnode, circuit_state)
         
-        circuit_state.var_to_wire[target] = subnode_circuit_state.output_wire
         circuit_state.add_gates(subnode_circuit_state.gate_list)
+        
+        assign_to_wire = subnode_circuit_state.output_wire
+        var_new_wire = get_new_id()
+        circuit_state.add_gate(
+            get_assign_gate(
+                lvalue_wire=circuit_state.var_to_wire[target],
+                rvalue_wire=assign_to_wire,
+                target_wire=var_new_wire
+            )
+        )
+        circuit_state.var_to_wire[target] = var_new_wire
 
         return circuit_state
     
@@ -414,9 +435,9 @@ class CallImpl:
         return vars
 
 def extract(c_ast):
-    functions = ModuleImp.get_functions_data(c_ast)
+    functions = ModuleImpl.get_functions_data(c_ast)
     circuit_state = CircuitState()
     circuit_state.functions_state = get_functions_state(functions)
-    final_cs = ModuleImp.extract(c_ast,  circuit_state)
+    final_cs = ModuleImpl.extract(c_ast,  circuit_state)
     print([str(gate) for gate in final_cs.gate_list])
     return final_cs.code

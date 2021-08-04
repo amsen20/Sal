@@ -1,5 +1,5 @@
 from local_types import VarName, WireId, Id, Environment, FunctionName
-from consts import END_GATE_ID, BIN_OP_CODE, RESERVED_FUNCTION_IDS, SIZEOF, CONSTANT_GATE_ID
+from consts import ASSIGN_GATE_ID, END_GATE_ID, BIN_OP_CODE, RESERVED_FUNCTION_IDS, SIZEOF, CONSTANT_GATE_ID
 from consts import OUT_GATE_ID
 from utils import get_wire_bytearray
 from utils import get_function_bytearray
@@ -62,3 +62,6 @@ def get_bin_op_gate(op, out_wire, in1_wire, in2_wire):
 
 def get_constant_gate(value, out_wire):
     return Gate(CONSTANT_GATE_ID, "const", [SIZEOF[type(value)], value], [out_wire])
+
+def get_assign_gate(lvalue_wire, rvalue_wire, target_wire):
+    return Gate(ASSIGN_GATE_ID, "assign", [lvalue_wire, rvalue_wire], [target_wire])
