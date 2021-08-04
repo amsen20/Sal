@@ -127,7 +127,7 @@ class FunctionDefImpl:
     
 
 @register_impl(type=ast.Assign)
-class AssignImp:
+class AssignImpl:
     subnode_allowed_types = {ast.BinOp, ast.Constant, ast.Name, ast.Call}
 
     @classmethod
@@ -418,8 +418,5 @@ def extract(c_ast):
     circuit_state = CircuitState()
     circuit_state.functions_state = get_functions_state(functions)
     final_cs = ModuleImp.extract(c_ast,  circuit_state)
-    #used_vars = ModuleImp.get_defined_vars(c_ast)
-    #for var in used_vars:
-        #print(var)
-    #print([str(gate) for gate in final_cs.gate_list])
+    print([str(gate) for gate in final_cs.gate_list])
     return final_cs.code
