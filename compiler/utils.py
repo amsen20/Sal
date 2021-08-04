@@ -12,10 +12,13 @@ def is_allowed(cls, obj):
     return False
 
 def get_wire_bytearray(id: WireId) -> bytearray:
-    return id.to_bytes(4, "big")
+    return bytearray(id.to_bytes(4, "big"))
 
 def get_function_bytearray(id: FunctionId) -> bytearray:
-    return id.to_bytes(4, "big")
+    return bytearray(id.to_bytes(4, "big"))
+
+def get_description_length(length: int) -> bytearray:
+    return bytearray(length.to_bytes(4, "big"))
 
 def merge_envs(
     first_env: Environment,

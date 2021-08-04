@@ -1,8 +1,8 @@
 import ast
 from copy import deepcopy
-from state.circuit_state import END_GATE, get_assign_gate, get_bin_op_gate, get_constant_gate
+from state.circuit_state import get_assign_gate, get_bin_op_gate, get_constant_gate
 from state.circuit_state import get_out_gate, Gate
-from utils import get_wire_bytearray, get_function_bytearray
+from utils import get_description_length, get_wire_bytearray, get_function_bytearray
 from gen.wire import get_new_id
 from state.circuit_state import CircuitState
 from utils import is_allowed, merge_envs
@@ -88,6 +88,7 @@ class FunctionDefImpl:
 
         fstate = circuit_state.functions_state[node.name]
         circuit_state.code = get_function_bytearray(fstate.id)
+        length_index = len(circuit_state.code)
         circuit_state.code += len(fstate.args).to_bytes(1, "big")
         
         for arg in fstate.args:
@@ -119,7 +120,11 @@ class FunctionDefImpl:
             circuit_state.out_wires += subnode_circuit_state.out_wires
         for wire_out in circuit_state.out_wires:
             circuit_state.add_gate(get_out_gate(wire_out))
-        circuit_state.add_gate(END_GATE)
+        
+        circuit_state.code = circuit_state.code[:length_index] + \
+            get_description_length(len(circuit_state.code)) + \
+                circuit_state.code[length_index:]
+
         return circuit_state
     
     @classmethod

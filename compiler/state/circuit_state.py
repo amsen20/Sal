@@ -1,5 +1,5 @@
 from local_types import VarName, WireId, Id, Environment, FunctionName
-from consts import ASSIGN_GATE_ID, END_GATE_ID, BIN_OP_CODE, RESERVED_FUNCTION_IDS, SIZEOF, CONSTANT_GATE_ID
+from consts import ASSIGN_GATE_ID, BIN_OP_CODE, RESERVED_FUNCTION_IDS, SIZEOF, CONSTANT_GATE_ID
 from consts import OUT_GATE_ID
 from utils import get_wire_bytearray
 from utils import get_function_bytearray
@@ -51,7 +51,7 @@ class CircuitState:
         for gate in gates:
             self.add_gate(gate)
 
-END_GATE = Gate(END_GATE_ID, "end", [], [])
+# END_GATE = Gate(END_GATE_ID, "end", [], [])
 
 def get_out_gate(wire): 
     return Gate(OUT_GATE_ID, "out", [wire], [])
