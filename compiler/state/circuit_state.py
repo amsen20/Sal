@@ -1,4 +1,4 @@
-from compiler.consts import COMPARE_CODE, COND_GATE_ID, JOIN_GATE_ID, NOT_GATE_ID
+from consts import COMPARE_CODE, COND_GATE_ID, JOIN_GATE_ID, NOT_GATE_ID
 from local_types import VarName, WireId, Id, Environment, FunctionName
 from consts import ASSIGN_GATE_ID, BIN_OP_CODE, RESERVED_FUNCTION_IDS, SIZEOF, CONSTANT_GATE_ID
 from consts import OUT_GATE_ID

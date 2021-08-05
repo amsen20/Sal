@@ -1,7 +1,7 @@
 import ast
-from compiler.state.circuit_state import get_compare_gate, get_cond_gate, get_join_gate, get_not_gate
 from copy import deepcopy
 from state.circuit_state import get_assign_gate, get_bin_op_gate, get_constant_gate
+from state.circuit_state import get_not_gate, get_cond_gate, get_compare_gate, get_join_gate
 from state.circuit_state import get_out_gate, Gate
 from utils import get_description_length, get_wire_bytearray, get_function_bytearray
 from gen.wire import get_new_id
@@ -67,7 +67,7 @@ class ModuleImpl:
             
 @register_impl(type=ast.FunctionDef)
 class FunctionDefImpl:
-    subnode_allowed_types = {ast.Assign, ast.Return}
+    subnode_allowed_types = {ast.Assign, ast.Return, ast.If}
 
     @classmethod
     def clone_inherit_state(
@@ -442,7 +442,7 @@ class CallImpl:
 
 @register_impl(type=ast.If)
 class IfImpl:
-    subnode_allowed_types = {ast.Call, ast.Assign, ast.Compare, ast.If}
+    subnode_allowed_types = {ast.Call, ast.Assign, ast.Compare, ast.If, ast.Return}
 
     @classmethod
     def clone_inherit_state(
@@ -462,11 +462,11 @@ class IfImpl:
         inherit_state: CircuitState
     ) -> CircuitState:
         circuit_state = cls.clone_inherit_state(inherit_state)
-        used_vars = cls.get_defined_var(node)
+        used_vars = cls.get_defined_vars(node)
         prev_var_to_wire = deepcopy(circuit_state.var_to_wire)
         cond_impl = type_to_class[type(node.test)]
         cond_circuit: CircuitState = cond_impl.extract(node.test, circuit_state)
-        cond_wire = cond_circuit.ouput_wire
+        cond_wire = cond_circuit.output_wire
         for used_var in used_vars:
             old_wire = circuit_state.var_to_wire[used_var]
             new_wire = get_new_id()
