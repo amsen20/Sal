@@ -1,4 +1,4 @@
-from compiler.consts import COND_GATE_ID, JOIN_GATE_ID, NOT_GATE_ID
+from compiler.consts import COMPARE_CODE, COND_GATE_ID, JOIN_GATE_ID, NOT_GATE_ID
 from local_types import VarName, WireId, Id, Environment, FunctionName
 from consts import ASSIGN_GATE_ID, BIN_OP_CODE, RESERVED_FUNCTION_IDS, SIZEOF, CONSTANT_GATE_ID
 from consts import OUT_GATE_ID
@@ -6,6 +6,7 @@ from utils import get_wire_bytearray
 from utils import get_function_bytearray
 from state.function_state import FunctionState
 from typing import Dict, List
+import ast
 
 class Gate:
     def __init__(
@@ -75,3 +76,18 @@ def get_not_gate(in_wire, out_wire):
 
 def get_join_gate(in1_wire, in2_wire, out_wire):
     return Gate(JOIN_GATE_ID, "join", [in1_wire, in2_wire], out_wire)
+
+def get_compare_gate(op, out_wire, in1_wire, in2_wire):
+    func_id = COMPARE_CODE[type(op)]
+    if(func_id == COMPARE_CODE[ast.Gt]):
+        func_id = COMPARE_CODE[ast.Lt]
+        tmp_wire = in1_wire
+        in1_wire = in2_wire
+        in2_wire = tmp_wire
+    if(func_id == COMPARE_CODE[ast.GtE]):
+        func_id = COMPARE_CODE[ast.LtE]
+        tmp_wire = in1_wire
+        in1_wire = in2_wire
+        in2_wire = tmp_wire
+    func_name = RESERVED_FUNCTION_IDS[func_id]
+    return Gate(func_id, func_name, [in1_wire, in2_wire], [out_wire])

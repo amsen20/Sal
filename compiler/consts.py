@@ -25,7 +25,11 @@ RESERVED_FUNCTION_IDS = {
     11: 'mult',
     12: 'div',
     13: 'sub',
-    14: 'pow'
+    14: 'pow',
+    20: 'lt',
+    21: 'lte',
+    22: 'gt',
+    23: 'gte',
 }
 
 BIN_OP_CODE = {
@@ -34,6 +38,13 @@ BIN_OP_CODE = {
     ast.Div: 12,
     ast.Sub: 13,
     ast.Pow: 14
+}
+
+COMPARE_CODE = {
+    ast.Lt: 20,
+    ast.LtE: 21,
+    ast.Gt: 22,
+    ast.GtE: 23
 }
 
 SIZEOF = {
