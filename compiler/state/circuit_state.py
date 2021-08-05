@@ -1,3 +1,4 @@
+from compiler.consts import COND_GATE_ID
 from local_types import VarName, WireId, Id, Environment, FunctionName
 from consts import ASSIGN_GATE_ID, BIN_OP_CODE, RESERVED_FUNCTION_IDS, SIZEOF, CONSTANT_GATE_ID
 from consts import OUT_GATE_ID
@@ -65,3 +66,6 @@ def get_constant_gate(value, out_wire):
 
 def get_assign_gate(lvalue_wire, rvalue_wire, target_wire):
     return Gate(ASSIGN_GATE_ID, "assign", [lvalue_wire, rvalue_wire], [target_wire])
+
+def get_cond_gate(in_wire, cond_wire, out_wire):
+    return Gate(COND_GATE_ID, "cond", [in_wire, cond_wire], [out_wire]) 

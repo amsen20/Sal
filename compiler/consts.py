@@ -9,12 +9,14 @@ MAX_FUNCTION_ID = (1 << 32)
 OUT_GATE_ID = 1
 CONSTANT_GATE_ID = 2
 ASSIGN_GATE_ID = 3
+COND_GATE_ID = 4
 
 RESERVED_FUNCTION_IDS = {
     # 0: 'end',
     1: 'out',
     2: 'const',
     3: 'assign',
+    4: 'cond',
     10: 'add',
     11: 'mult',
     12: 'div',
