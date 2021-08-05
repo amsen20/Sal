@@ -1,4 +1,5 @@
 import ast
+from compiler.state.circuit_state import get_cond_gate, get_join_gate, get_not_gate
 from copy import deepcopy
 from state.circuit_state import get_assign_gate, get_bin_op_gate, get_constant_gate
 from state.circuit_state import get_out_gate, Gate
@@ -457,11 +458,44 @@ class IfImpl:
     @classmethod
     def extract(
         cls,
-        node: ast.Call,
+        node: ast.If,
         inherit_state: CircuitState
     ) -> CircuitState:
         circuit_state = cls.clone_inherit_state(inherit_state)
+        used_vars = cls.get_defined_var(node)
+        prev_var_to_wire = deepcopy(circuit_state.var_to_wire)
+        # TODO cond_circuit = 
+        # TODO cond_wire = 
+        for used_var in used_vars:
+            old_wire = circuit_state.var_to_wire[used_var]
+            new_wire = get_new_id()
+            # cond_wire = cond_circuit.ouput_wire
+            circuit_state.add_gate(get_cond_gate(old_wire, cond_wire, new_wire))
+            circuit_state.var_to_wire[used_var] = new_wire
 
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_circuit_state: CircuitState = impl.extract(subnode, circuit_state) 
+            circuit_state.var_to_wire = merge_envs(
+                circuit_state.var_to_wire,
+                subnode_circuit_state.var_to_wire
+            )
+            circuit_state.add_gates(subnode_circuit_state.gate_list)
+            circuit_state.out_wires += subnode_circuit_state.out_wires
+        
+        for used_var in used_vars:
+            prev_var_wire = prev_var_to_wire[used_var]
+            curr_var_wire = circuit_state.var_to_wire[used_var]
+            not_cond_wire = get_new_id()
+            circuit_state.add_gate(get_not_gate(cond_wire, not_cond_wire))
+            main_var_wire = get_new_id()
+            circuit_state.add_gate(get_cond_gate(prev_var_wire, not_cond_wire, main_var_wire))
+            new_wire = get_new_id()
+            circuit_state.add_gate(get_join_gate(main_var_wire, curr_var_wire, new_wire))
+        
+        return circuit_state
         
     @classmethod
     def get_defined_vars(
