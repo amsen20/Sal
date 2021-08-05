@@ -11,6 +11,7 @@ CONSTANT_GATE_ID = 2
 ASSIGN_GATE_ID = 3
 COND_GATE_ID = 4
 NOT_GATE_ID = 5
+JOIN_GATE_ID = 6
 
 RESERVED_FUNCTION_IDS = {
     # 0: 'end',
@@ -19,6 +20,7 @@ RESERVED_FUNCTION_IDS = {
     3: 'assign',
     4: 'cond',
     5: 'not',
+    6: 'join',
     10: 'add',
     11: 'mult',
     12: 'div',

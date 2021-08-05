@@ -1,4 +1,4 @@
-from compiler.consts import COND_GATE_ID, NOT_GATE_ID
+from compiler.consts import COND_GATE_ID, JOIN_GATE_ID, NOT_GATE_ID
 from local_types import VarName, WireId, Id, Environment, FunctionName
 from consts import ASSIGN_GATE_ID, BIN_OP_CODE, RESERVED_FUNCTION_IDS, SIZEOF, CONSTANT_GATE_ID
 from consts import OUT_GATE_ID
@@ -72,3 +72,6 @@ def get_cond_gate(in_wire, cond_wire, out_wire):
 
 def get_not_gate(in_wire, out_wire):
     return Gate(NOT_GATE_ID, "not", [in_wire], [out_wire])
+
+def get_join_gate(in1_wire, in2_wire, out_wire):
+    return Gate(JOIN_GATE_ID, "join", [in1_wire, in2_wire], out_wire)
