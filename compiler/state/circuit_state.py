@@ -75,7 +75,7 @@ def get_not_gate(in_wire, out_wire):
     return Gate(NOT_GATE_ID, "not", [in_wire], [out_wire])
 
 def get_join_gate(in1_wire, in2_wire, out_wire):
-    return Gate(JOIN_GATE_ID, "join", [in1_wire, in2_wire], out_wire)
+    return Gate(JOIN_GATE_ID, "join", [in1_wire, in2_wire], [out_wire])
 
 def get_compare_gate(op, out_wire, in1_wire, in2_wire):
     func_id = COMPARE_CODE[type(op)]
