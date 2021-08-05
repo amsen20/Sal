@@ -439,6 +439,44 @@ class CallImpl:
             vars = vars.union(subnode_vars)
         return vars
 
+@register_impl(type=ast.If)
+class IfImpl:
+    subnode_allowed_types = {ast.Call, ast.Constant, ast.BinOp, ast.Name}
+
+    @classmethod
+    def clone_inherit_state(
+        cls,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        circuit_state = CircuitState()
+        circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
+        circuit_state.functions_state = deepcopy(inherit_state.functions_state)
+
+        return circuit_state
+
+    @classmethod
+    def extract(
+        cls,
+        node: ast.Call,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        circuit_state = cls.clone_inherit_state(inherit_state)
+
+        
+    @classmethod
+    def get_defined_vars(
+        cls,
+        node: ast.If
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_defined_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
+
 def extract(c_ast):
     functions = ModuleImpl.get_functions_data(c_ast)
     circuit_state = CircuitState()
