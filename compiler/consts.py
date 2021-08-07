@@ -47,6 +47,6 @@ COMPARE_CODE = {
     ast.GtE: 23
 }
 
-SIZEOF = {
-    int: 4
+TYPE_CODE = {
+    int: 1
 }
