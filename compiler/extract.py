@@ -442,7 +442,7 @@ class CallImpl:
 
 @register_impl(type=ast.If)
 class IfImpl:
-    subnode_allowed_types = {ast.Call, ast.Assign, ast.Compare, ast.If, ast.Return}
+    subnode_allowed_types = {ast.Assign, ast.If, ast.Return}
 
     @classmethod
     def clone_inherit_state(
@@ -463,10 +463,13 @@ class IfImpl:
     ) -> CircuitState:
         circuit_state = cls.clone_inherit_state(inherit_state)
         used_vars = cls.get_defined_vars(node)
+        
         prev_var_to_wire = deepcopy(circuit_state.var_to_wire)
-        cond_impl = type_to_class[type(node.test)]
+        cond_impl = type_to_class[type(node.test)] # TODO check it is testable or not
         cond_circuit: CircuitState = cond_impl.extract(node.test, circuit_state)
         cond_wire = cond_circuit.output_wire
+        circuit_state.add_gates(cond_circuit.gate_list)
+        
         for used_var in used_vars:
             old_wire = circuit_state.var_to_wire[used_var]
             new_wire = get_new_id()
