@@ -64,7 +64,20 @@ class ModuleImpl:
             subnode_vars = impl.get_defined_vars(subnode)
             vars = vars.union(subnode_vars)
         return vars
-            
+    
+    def get_used_vars(
+        cls,
+        node: ast.Module
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_used_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
+       
 @register_impl(type=ast.FunctionDef)
 class FunctionDefImpl:
     subnode_allowed_types = {ast.Assign, ast.Return, ast.If}
@@ -142,6 +155,23 @@ class FunctionDefImpl:
             vars = vars.union(subnode_vars)
         return vars
     
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.FunctionDef
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for arg in node.args:
+            vars.add(arg.arg)
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_used_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
+
+    
 
 @register_impl(type=ast.Assign)
 class AssignImpl:
@@ -199,6 +229,22 @@ class AssignImpl:
         for subnode in node.targets:
             vars.add(subnode.id)
         return vars
+    
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.Assign
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.targets:
+            vars.add(subnode)
+        impl = type_to_class[type(node.value)]
+        value_vars = impl.get_used_vars(node.value)
+        vars = vars.union(value_vars)
+        return vars
+
+        
+    
 
 @register_impl(type=ast.BinOp)
 class BinOpImpl:
@@ -261,6 +307,24 @@ class BinOpImpl:
             subnode_vars = impl.get_defined_vars(subnode)
             vars = vars.union(subnode_vars)
         return vars
+    
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.BinOp
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        left = node.left
+        right = node.right
+        subnodes = [left, right]
+        for subnode in subnodes:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_used_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
+    
 
 @register_impl(type=ast.Constant)
 class ConstantImpl:
@@ -293,6 +357,12 @@ class ConstantImpl:
         return circuit_state
     @classmethod
     def get_defined_vars(
+        cls,
+        node: ast.Constant
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        return vars
+    def get_used_vars(
         cls,
         node: ast.Constant
     ) -> Set[ast.Name]:
@@ -348,6 +418,20 @@ class ReturnImpl:
             vars = vars.union(subnode_vars)
         return vars
 
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.Return
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in [node.value]:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_used_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
+
 @register_impl(type=ast.Name)
 class NameImpl:
     subnode_allowed_types = {}
@@ -379,6 +463,15 @@ class NameImpl:
         node: ast.Name
     ) -> Set[ast.Name]:
         vars: Set[ast.Name] = set()
+        return vars
+
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.Name
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        vars.add(node.id)
         return vars
 
 @register_impl(type=ast.Call)
@@ -437,6 +530,20 @@ class CallImpl:
                 raise NotAllowedSubnode
             impl = type_to_class[type(subnode)]
             subnode_vars = impl.get_defined_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
+    
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.Call
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.args:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_used_vars(subnode)
             vars = vars.union(subnode_vars)
         return vars
 
@@ -513,6 +620,23 @@ class IfImpl:
             subnode_vars = impl.get_defined_vars(subnode)
             vars = vars.union(subnode_vars)
         return vars
+    
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.If
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_used_vars(subnode)
+            vars = vars.union(subnode_vars)
+        impl = type_to_class[node.test]
+        test_vars = impl.get_used_vars(node.test)
+        vars = vars.union(test_vars)
+        return vars
 
 @register_impl(type=ast.Compare)
 class CompareImpl:
@@ -565,6 +689,20 @@ class CompareImpl:
         node: ast.Compare
     ) -> Set[ast.Name]:
         vars: Set[ast.Name] = set()
+        return vars
+    
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.Compare
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        subnodes = [node.left, node.comparators[0]]
+        for subnode in subnodes:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            vars = vars.union(impl.get_used_vars(subnode))
         return vars
 
 def extract(c_ast):
