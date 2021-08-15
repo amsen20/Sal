@@ -1,6 +1,7 @@
 import ast
 from copy import deepcopy
 from state.circuit_state import get_assign_gate, get_bin_op_gate, get_constant_gate
+from state.circuit_state import get_not_gate, get_cond_gate, get_compare_gate, get_join_gate
 from state.circuit_state import get_out_gate, Gate
 from utils import get_description_length, get_wire_bytearray, get_function_bytearray
 from gen.wire import get_new_id
@@ -66,7 +67,7 @@ class ModuleImpl:
             
 @register_impl(type=ast.FunctionDef)
 class FunctionDefImpl:
-    subnode_allowed_types = {ast.Assign, ast.Return}
+    subnode_allowed_types = {ast.Assign, ast.Return, ast.If}
 
     @classmethod
     def clone_inherit_state(
@@ -437,6 +438,133 @@ class CallImpl:
             impl = type_to_class[type(subnode)]
             subnode_vars = impl.get_defined_vars(subnode)
             vars = vars.union(subnode_vars)
+        return vars
+
+@register_impl(type=ast.If)
+class IfImpl:
+    subnode_allowed_types = {ast.Assign, ast.If, ast.Return}
+
+    @classmethod
+    def clone_inherit_state(
+        cls,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        circuit_state = CircuitState()
+        circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
+        circuit_state.functions_state = deepcopy(inherit_state.functions_state)
+
+        return circuit_state
+
+    @classmethod
+    def extract(
+        cls,
+        node: ast.If,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        circuit_state = cls.clone_inherit_state(inherit_state)
+        used_vars = cls.get_defined_vars(node)
+        
+        prev_var_to_wire = deepcopy(circuit_state.var_to_wire)
+        cond_impl = type_to_class[type(node.test)] # TODO check it is testable or not
+        cond_circuit: CircuitState = cond_impl.extract(node.test, circuit_state)
+        cond_wire = cond_circuit.output_wire
+        circuit_state.add_gates(cond_circuit.gate_list)
+        
+        for used_var in used_vars:
+            old_wire = circuit_state.var_to_wire[used_var]
+            new_wire = get_new_id()
+            circuit_state.add_gate(get_cond_gate(old_wire, cond_wire, new_wire))
+            circuit_state.var_to_wire[used_var] = new_wire
+
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_circuit_state: CircuitState = impl.extract(subnode, circuit_state) 
+            circuit_state.var_to_wire = merge_envs(
+                circuit_state.var_to_wire,
+                subnode_circuit_state.var_to_wire
+            )
+            circuit_state.add_gates(subnode_circuit_state.gate_list)
+            circuit_state.out_wires += subnode_circuit_state.out_wires
+        
+        for used_var in used_vars:
+            prev_var_wire = prev_var_to_wire[used_var]
+            curr_var_wire = circuit_state.var_to_wire[used_var]
+            not_cond_wire = get_new_id()
+            circuit_state.add_gate(get_not_gate(cond_wire, not_cond_wire))
+            main_var_wire = get_new_id()
+            circuit_state.add_gate(get_cond_gate(prev_var_wire, not_cond_wire, main_var_wire))
+            new_wire = get_new_id()
+            circuit_state.add_gate(get_join_gate(main_var_wire, curr_var_wire, new_wire))
+        
+        return circuit_state
+
+    @classmethod
+    def get_defined_vars(
+        cls,
+        node: ast.If
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_defined_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
+
+@register_impl(type=ast.Compare)
+class CompareImpl:
+
+    subnode_allowed_types = {ast.BinOp, ast.Expr, ast.Constant, ast.Name}
+
+    @classmethod
+    def clone_inherit_state(
+        cls,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        circuit_state = CircuitState()
+        circuit_state.functions_state = deepcopy(inherit_state.functions_state)
+        circuit_state.var_to_wire = deepcopy(inherit_state.var_to_wire)
+
+        return circuit_state
+
+    @classmethod
+    def extract(
+        cls,
+        node: ast.Compare,
+        inherit_state: CircuitState
+    ) -> CircuitState:
+        circuit_state = cls.clone_inherit_state(inherit_state)
+        # TODO multiple comparators
+        subnodes = [node.left, node.comparators[0]]
+        subnodes_data: List[CircuitState] = []
+        
+        for subnode in subnodes:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_circuit_state = impl.extract(subnode, circuit_state)
+            subnodes_data.append(subnode_circuit_state)
+        
+        for cs in subnodes_data:
+            circuit_state.add_gates(cs.gate_list)
+        
+        output_wire = get_new_id()
+        # TODO multiple comparators
+        circuit_state.add_gate(
+            get_compare_gate(node.ops[0], output_wire, subnodes_data[0].output_wire, subnodes_data[1].output_wire)
+        )
+        circuit_state.output_wire = output_wire
+        return circuit_state
+    
+    @classmethod
+    def get_defined_vars(
+        cls,
+        node: ast.Compare
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
         return vars
 
 def extract(c_ast):
