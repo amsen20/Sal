@@ -9,7 +9,7 @@ namespace state {
     struct Node {
         std::shared_ptr<prestate::Node> prenode;
         std::shared_ptr<Node> par;
-        std::vector<std::atomic<std::shared_ptr<Node>>> childs;
+        std::vector<std::shared_ptr<Node>> childs; // treat them atomic
 
         /*
         * for solid boxes
@@ -21,13 +21,9 @@ namespace state {
         
         Node(std::shared_ptr<prestate::Node> prenode=nullptr, std::shared_ptr<Node> par=nullptr):
             prenode(prenode), par(par) {
-                if(prenode) {
-                    if(get_box()->graph) {
-                        childs.resize(get_box()->graph->nodes.size());
-                        for(auto &&child: childs)
-                            child.store(nullptr);
-                    }
-                }
+                if(prenode && get_box()->graph)
+                    childs.resize(get_box()->graph->nodes.size(), nullptr);
+                filled_inputs = 0;
             }
     };
 
