@@ -9,4 +9,6 @@ constexpr FUNC_ID POWER_PIN_ID = 2; // CONST id
 
 constexpr TYPE_ID INTEGER_TYPE_ID = 1;
 
+constexpr int RUN_OK = 0;
+
 #endif
