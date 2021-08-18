@@ -38,8 +38,7 @@ read_code(const char *path) {
 box_set
 load_code(const char *path) {
     auto code = read_code(path);
-    std::map<FUNC_ID, std::shared_ptr<Box>> id_to_box;
-    set_up(id_to_box);
+    std::map<FUNC_ID, std::shared_ptr<Box>> id_to_box = set_up();
     box_set boxes;
 
     auto skip_gate = [&](int it) -> int {
