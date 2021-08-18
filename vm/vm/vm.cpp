@@ -54,7 +54,7 @@ void job(int id, Queue &q) {
 }
 
 int
-vm::run(prestate::box_set boxes) {
+vm::run(std::pair<prestate::box_set, FUNC_ID> boxes_and_main_id) {
     Queue q;
     on.store(1);
 
