@@ -4,3 +4,6 @@ def ali(a, b):
         b = a * b
         return a
     return b
+
+def main(a, b):
+    return ali(a, b)
