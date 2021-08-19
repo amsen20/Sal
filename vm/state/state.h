@@ -15,7 +15,7 @@ namespace state {
         * for solid boxes
         */
         std::vector<PRIMITIVE_PTR> inputs;
-        int filled_inputs;
+        std::atomic_int filled_inputs;
 
         std::shared_ptr<prestate::Box> get_box();
         
@@ -24,6 +24,8 @@ namespace state {
                 if(prenode && get_box()->graph)
                     childs.resize(get_box()->graph->nodes.size(), nullptr);
                 filled_inputs = 0;
+                if(get_box()->solid)
+                    inputs.resize(get_box()->inputs_sz, nullptr);
             }
     };
 

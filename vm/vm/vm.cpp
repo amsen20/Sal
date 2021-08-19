@@ -1,3 +1,7 @@
+/*
+* TODO: for now there is no support for raising exceptions if two flow come to a same pin.
+*/
+
 #define DEBUG
 #define THREAD_NUM 2
 
@@ -27,7 +31,7 @@ job(
     int id,
     Queue &q,
     const std::shared_ptr<state::Node> &main_node,
-    std::vector<PRIMITIVE_PTR> &out
+    std::vector<PRIMITIVE_PTR> &outs
     )
 {
 #ifdef DEBUG
@@ -44,7 +48,61 @@ job(
         do {
             if(!flow.second.first)
                 break;
-            // TODO do the job
+            auto value = flow.first;
+            auto node = flow.second.first;
+            auto pin_index = flow.second.second;
+            auto prenode = node->prenode;
+            auto box = prenode->box;
+
+            if(box->solid) {
+                // TODO check pin should be none before.
+                node->inputs[pin_index] = value; // TODO free the flow
+                node->filled_inputs ++; // check memory order
+
+                if(box->id == OUT_PIN_ID) {
+                    auto index = prenode->out_index;
+                    auto par_node = node->par;
+
+                    if(main_node == par_node) {
+                        outs[index] = value;
+                        continue;
+                    }
+
+                    flow_out(
+                        q,
+                        value,
+                        par_node->prenode->out[index],
+                        par_node->par
+                    );
+                    continue;
+                }
+
+                if(!box->sync || node->filled_inputs == box->inputs_sz) {
+                    if(box->controller && !box->check(node->inputs))
+                        continue;
+                    
+                    auto out = box->func(node->inputs);
+                    flow_outs(
+                        q,
+                        out,
+                        prenode->out[0],
+                        node->par
+                    );
+
+                    continue;
+                }
+
+                continue;
+            }
+
+            // not solid
+            auto input_prenode = box->graph->sources[pin_index];
+            flow_out(
+                q,
+                value,
+                input_prenode->out[0],
+                node
+            );
         }while(q.try_dequeue(flow));
         
         on --;
@@ -85,7 +143,7 @@ vm::run(std::pair<prestate::box_set, FUNC_ID> boxes_and_main_id) {
     std::shared_ptr<prestate::Node> main_prenode = std::make_shared<prestate::Node>(main);
     std::shared_ptr<state::Node> main_node = std::make_shared<state::Node>(main_prenode);
     
-    flow_initials(main_node);
+    flow_initials(q, main_node);
     std::vector<PRIMITIVE_PTR> outs(main->outputs_sz);
     for(int i=0 ; i<main->inputs_sz ; i++) {
         std::cout << "Enter: ";

@@ -27,8 +27,10 @@ namespace prestate {
 
         /*
         * for solid boxes
+        * for now just one out pin
         */
-        std::function<PRIMITIVE_PTR(PRIMITIVE_PTR)> func;
+        std::function<PRIMITIVE_PTR(const std::vector<PRIMITIVE_PTR>&)> func;
+        std::function<bool(const std::vector<PRIMITIVE_PTR>&)> check;
     };
 
     struct Node {
