@@ -10,7 +10,7 @@ from utils import is_allowed, merge_envs
 from decorators import register_impl, type_to_class
 from typing import List, Tuple, Set
 from state.function_state import get_functions_state
-from exceptions import NotAllowedSubnode
+from exceptions import NoMainFound, NotAllowedSubnode
 
 @register_impl(type=ast.Module)
 class ModuleImpl:
@@ -40,6 +40,13 @@ class ModuleImpl:
     ) -> CircuitState:
         circuit_state = cls.clone_inherit_state(inherit_state)
 
+        if "main" not in circuit_state.functions_state:
+            raise NoMainFound
+        
+        circuit_state.code = get_function_bytearray(
+            circuit_state.functions_state["main"].id
+        )
+        
         for subnode in node.body:
             if not is_allowed(cls, subnode):
                 raise NotAllowedSubnode

@@ -29,18 +29,21 @@ read_code(const char *path) {
 }
 
 /*
-    <code> = NULL | <code><box desc>
+    <code> = <main func id><code body>
+    <code body> = NULL | <code body><box desc>
     <box desc> = <box header><graph desc><end gate>
     <box header> = <box id><number of inputs><input wires><number of outputs><number of local vars><local var wires>
     <graph desc> = NULL | <gate><graph desc>
     <gate> = <gate id><gate input wires><gate output wires>
 */
-box_set
+std::pair<box_set, FUNC_ID>
 load_code(const char *path) {
     auto code = read_code(path);
-    std::map<FUNC_ID, std::shared_ptr<Box>> id_to_box;
-    set_up(id_to_box);
+    std::map<FUNC_ID, std::shared_ptr<Box>> id_to_box = set_up();
     box_set boxes;
+
+    FUNC_ID main_id = __4bytes_to_int(&code[0]);
+    int offset = sizeof(FUNC_ID);
 
     auto skip_gate = [&](int it) -> int {
         FUNC_ID id = __4bytes_to_int(&code[it]);
@@ -64,7 +67,7 @@ load_code(const char *path) {
     };
 
     // finding box definitions
-    for(int it=0 ; it<code.size() ; ) { 
+    for(int it=offset ; it<code.size() ; ) { 
         int next = it;
         auto box = std::make_shared<Box>();
         boxes.push_back(box);
@@ -91,7 +94,7 @@ load_code(const char *path) {
 
     std::map<WIRE_ID, Pin> env;
 
-    for(int it=0 ; it<code.size() ; ) {
+    for(int it=offset ; it<code.size() ; ) {
         int next = it;
         FUNC_ID box_id = __4bytes_to_int(&code[it]);
         std::shared_ptr<Box> box = id_to_box[box_id];
@@ -196,5 +199,5 @@ load_code(const char *path) {
         it = next;
     }
 
-    return boxes;
+    return {boxes, main_id};
 }

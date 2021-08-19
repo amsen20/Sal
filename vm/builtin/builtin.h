@@ -9,10 +9,11 @@
 
 using prestate::Box;
 
-std::shared_ptr<Box> __add, __mul, __and, __or, __not, __assign, __cond;
-std::shared_ptr<Box> __cmp, __conn, __in_pin, __out_pin, __power_pin;
+// TODO check if static is ok.
+static std::shared_ptr<Box> __add, __mul, __and, __or, __not, __assign, __cond;
+static std::shared_ptr<Box> __cmp, __conn, __in_pin, __out_pin, __power_pin;
 
-void
-set_up(std::map<FUNC_ID, std::shared_ptr<Box>>&);
+std::map<FUNC_ID, std::shared_ptr<Box>>
+set_up();
 
 #endif

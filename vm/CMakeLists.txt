@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(salvm VERSION 0.1.0)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_subdirectory(concurrentqueue)
@@ -11,6 +11,7 @@ add_subdirectory(loader)
 add_subdirectory(vm)
 add_subdirectory(utils)
 add_subdirectory(builtin)
+add_subdirectory(state)
 
 add_executable(salvm main.cpp)
 
