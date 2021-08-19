@@ -863,8 +863,6 @@ class WhileImpl:
         functions_data += test_functions_data
         return functions_data
 
-
-
 def extract(c_ast):
     functions = ModuleImpl.get_functions_data(c_ast)
     circuit_state = CircuitState()
