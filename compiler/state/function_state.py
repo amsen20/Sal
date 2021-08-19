@@ -17,4 +17,5 @@ def get_functions_state(functions: List[ast.FunctionDef]) -> Dict[str, FunctionS
         current_fstate = FunctionState(get_new_id(function.name), function.name, function.args, 1)
         ret[current_fstate.name] = current_fstate
     return ret
-    
+
+
