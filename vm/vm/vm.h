@@ -6,7 +6,7 @@
 
 namespace vm {
     int
-    run(std::pair<prestate::box_set, FUNC_ID>);
+    run(const std::pair<prestate::box_set, FUNC_ID>&);
 }
 
 #endif

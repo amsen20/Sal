@@ -27,13 +27,37 @@ typedef moodycamel::BlockingConcurrentQueue<Flow> Queue;
 std::atomic_int on; // TODO search for the memory order
 
 void
+flow_out(
+    Queue &q,
+    PRIMITIVE_PTR value,
+    const std::vector<prestate::Pin> &pins,
+    std::shared_ptr<state::Node> &node
+) {
+    for(auto &&pin: pins) {
+        auto cln = clone_lazy(node, pin.first);
+        q.enqueue(Flow(value, state::Pin(cln, pin.second)));
+    }
+}
+
+void
+flow_initials(Queue &q, std::shared_ptr<state::Node> &node) {
+    if(node->get_box()->solid)
+        return;
+    for(auto &&it: node->get_box()->graph->initials) {
+        auto pin = it.first;
+        auto value = it.second;
+        auto cln = clone_lazy(node, pin.first);
+        q.enqueue(Flow(value, state::Pin(cln, pin.second)));
+    }
+}
+
+void
 job(
     int id,
     Queue &q,
     const std::shared_ptr<state::Node> &main_node,
     std::vector<PRIMITIVE_PTR> &outs
-    )
-{
+) {
 #ifdef DEBUG
     std::cerr << "thread id: " << id << " started working.\n";
 #endif
@@ -82,7 +106,7 @@ job(
                         continue;
                     
                     auto out = box->func(node->inputs);
-                    flow_outs(
+                    flow_out(
                         q,
                         out,
                         prenode->out[0],
@@ -122,7 +146,7 @@ job(
 }
 
 int
-vm::run(std::pair<prestate::box_set, FUNC_ID> boxes_and_main_id) {
+vm::run(const std::pair<prestate::box_set, FUNC_ID> &boxes_and_main_id) {
     auto boxes = boxes_and_main_id.first;
     auto main_id = boxes_and_main_id.second;
     Queue q;
