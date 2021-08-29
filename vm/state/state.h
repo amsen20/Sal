@@ -4,12 +4,14 @@
 #include "../prestate/prestate.h"
 
 #include <atomic>
+#include <mutex>
 
 namespace state {
     struct Node {
         std::shared_ptr<prestate::Node> prenode;
         std::shared_ptr<Node> par;
         std::vector<std::shared_ptr<Node>> childs; // treat them atomic
+        std::vector<std::mutex> childs_mutex;
 
         /*
         * for solid boxes
@@ -21,8 +23,10 @@ namespace state {
         
         Node(std::shared_ptr<prestate::Node> prenode=nullptr, std::shared_ptr<Node> par=nullptr):
             prenode(prenode), par(par) {
-                if(prenode && get_box()->graph)
+                if(prenode && get_box()->graph) {
                     childs.resize(get_box()->graph->nodes.size(), nullptr);
+                    childs_mutex.resize(get_box()->graph->nodes.size());
+                }
                 filled_inputs = 0;
                 if(get_box()->solid)
                     inputs.resize(get_box()->inputs_sz, nullptr);

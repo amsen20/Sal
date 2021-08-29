@@ -27,26 +27,49 @@ typedef moodycamel::BlockingConcurrentQueue<Flow> Queue;
 std::atomic_int on; // TODO search for the memory order
 
 void
+flow_initials(Queue &q, std::shared_ptr<state::Node> &node);
+
+std::shared_ptr<state::Node>
+clone_lazy(
+    Queue &q,
+    std::shared_ptr<state::Node> par,
+    std::shared_ptr<prestate::Node> pre_node
+) {
+    auto &&child = par->childs[pre_node->index];
+    auto &&mtx = par->childs_mutex[pre_node->index];
+    if(!std::atomic_load(&child)) {
+        mtx.lock();
+        if(std::atomic_load(&child))
+            return child;
+        child = std::make_shared<state::Node>(pre_node, par);
+        flow_initials(q, child);
+        mtx.unlock();
+    }
+
+    return child;
+}
+
+void
 flow_out(
     Queue &q,
     PRIMITIVE_PTR value,
     const std::vector<prestate::Pin> &pins,
-    std::shared_ptr<state::Node> &node
+    const std::shared_ptr<state::Node> &node
 ) {
     for(auto &&pin: pins) {
-        auto cln = clone_lazy(node, pin.first);
+        auto cln = clone_lazy(q, node, pin.first);
         q.enqueue(Flow(value, state::Pin(cln, pin.second)));
     }
 }
 
 void
-flow_initials(Queue &q, std::shared_ptr<state::Node> &node) {
+flow_initials(Queue &q, const std::shared_ptr<state::Node> &node) {
     if(node->get_box()->solid)
         return;
     for(auto &&it: node->get_box()->graph->initials) {
         auto pin = it.first;
         auto value = it.second;
-        auto cln = clone_lazy(node, pin.first);
+        auto cln = clone_lazy(q, node, pin.first);
         q.enqueue(Flow(value, state::Pin(cln, pin.second)));
     }
 }

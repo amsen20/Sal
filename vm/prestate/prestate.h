@@ -29,8 +29,27 @@ namespace prestate {
         * for solid boxes
         * for now just one out pin
         */
-        std::function<PRIMITIVE_PTR(const std::vector<PRIMITIVE_PTR>&)> func;
+        std::function<PRIMITIVE_PTR(const std::vector<PRIMITIVE_PTR>&)> func; // FIXME one output functions only
         std::function<bool(const std::vector<PRIMITIVE_PTR>&)> check;
+
+        Box(
+                bool solid,
+                FUNC_ID id,
+                int inputs_sz,
+                int outputs_sz,
+                int locals_sz=0,
+                bool sync=true,
+                bool controller=false
+        ):
+                solid(solid),
+                id(id),
+                inputs_sz(inputs_sz),
+                outputs_sz(outputs_sz),
+                locals_sz(locals_sz),
+                graph(nullptr),
+                sync(sync),
+                controller(controller)
+        {}
     };
 
     struct Node {
