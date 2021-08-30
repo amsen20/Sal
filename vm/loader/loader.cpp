@@ -6,6 +6,9 @@
 
 #include <fstream>
 #include <map>
+#include <filesystem>
+#include <limits>
+#include <iostream>
 
 using namespace prestate;
 
@@ -18,9 +21,12 @@ read_const_value(TYPE_ID type_id, unsigned char *ptr){
 
 std::vector<unsigned char>
 read_code(const char *path) {
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
-    size_t size = file.tellg();
-    file.seekg(0, std::ios::beg);
+    std::ifstream file(path, std::ios::binary);
+    std::cout << std::filesystem::current_path() << "\n";
+    file.ignore( std::numeric_limits<std::streamsize>::max() );
+    size_t size = file.gcount();
+    file.clear();   //  Since ignore will have set eof.
+    file.seekg( 0, std::ios_base::beg );
 
     std::vector<unsigned char> code(size);
     file.read((char*)code.data(), size);
