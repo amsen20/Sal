@@ -133,5 +133,5 @@ dmypy.json
 *.idea
 *.DS_Store
 
-
+compiler/test.py
 vm/cmake-build-debug/*
