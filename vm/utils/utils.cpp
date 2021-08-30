@@ -2,6 +2,15 @@
 
 #include <iostream>
 
+std::string get_str(std::string s){
+    return s;
+}
+
+template<typename ...Args>
+std::string get_str(const std::string &first, Args&&... msg){
+    return first + get_str(msg...);
+}
+
 int32_t
 __4bytes_to_int(unsigned char *ptr) {
     int32_t ret = 0;

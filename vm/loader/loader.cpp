@@ -69,7 +69,7 @@ load_code(const char *path) {
     // finding box definitions
     for(int it=offset ; it<code.size() ; ) { 
         int next = it;
-        auto box = std::make_shared<Box>();
+        auto box = std::make_shared<Box>(false, 0, 0, 0);
         boxes.push_back(box);
         
         FUNC_ID box_id = __4bytes_to_int(&code[it]);

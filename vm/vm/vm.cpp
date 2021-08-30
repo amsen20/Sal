@@ -27,7 +27,7 @@ typedef moodycamel::BlockingConcurrentQueue<Flow> Queue;
 std::atomic_int on; // TODO search for the memory order
 
 void
-flow_initials(Queue &q, std::shared_ptr<state::Node> &node);
+flow_initials(Queue &q, const std::shared_ptr<state::Node> &node);
 
 std::shared_ptr<state::Node>
 clone_lazy(
@@ -127,8 +127,8 @@ job(
                 if(!box->sync || node->filled_inputs == box->inputs_sz) {
                     if(box->controller && !box->check(node->inputs))
                         continue;
-                    
-                    auto out = box->func(node->inputs);
+
+                    auto out = box->id == JOIN_ID ? value : box->func(node->inputs); // FIXME
                     flow_out(
                         q,
                         out,
@@ -185,7 +185,11 @@ vm::run(const std::pair<prestate::box_set, FUNC_ID> &boxes_and_main_id) {
             main = box;
             break;
         }
-    ensuref(main != nullptr, "main function should exists.");
+
+    if(!main) {
+        std::cout << "main function should exists.\n";
+        exit(0);
+    }
 
     std::shared_ptr<prestate::Node> main_prenode = std::make_shared<prestate::Node>(main);
     std::shared_ptr<state::Node> main_node = std::make_shared<state::Node>(main_prenode);
@@ -194,7 +198,7 @@ vm::run(const std::pair<prestate::box_set, FUNC_ID> &boxes_and_main_id) {
     std::vector<PRIMITIVE_PTR> outs(main->outputs_sz);
     for(int i=0 ; i<main->inputs_sz ; i++) {
         std::cout << "Enter: ";
-        int32_t dat;
+        int64_t dat;
         std::cin >> dat;
         q.enqueue(Flow((PRIMITIVE_PTR)dat, state::Pin(main_node, i)));
     }
@@ -214,7 +218,7 @@ vm::run(const std::pair<prestate::box_set, FUNC_ID> &boxes_and_main_id) {
         thread.join();
 
     for(int i=0 ; i<main->outputs_sz ; i++)
-        std::cout << (int32_t)outs[i] << "\n";
+        std::cout << (int64_t)outs[i] << "\n";
 
 #ifdef DEBUG
     std::cerr << "finished." << "\n";

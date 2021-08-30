@@ -11,7 +11,7 @@ namespace state {
         std::shared_ptr<prestate::Node> prenode;
         std::shared_ptr<Node> par;
         std::vector<std::shared_ptr<Node>> childs; // treat them atomic
-        std::vector<std::mutex> childs_mutex;
+        std::mutex *childs_mutex;
 
         /*
         * for solid boxes
@@ -25,12 +25,14 @@ namespace state {
             prenode(prenode), par(par) {
                 if(prenode && get_box()->graph) {
                     childs.resize(get_box()->graph->nodes.size(), nullptr);
-                    childs_mutex.resize(get_box()->graph->nodes.size());
+                    childs_mutex = new std::mutex[get_box()->graph->nodes.size()];
                 }
                 filled_inputs = 0;
                 if(get_box()->solid)
                     inputs.resize(get_box()->inputs_sz, nullptr);
             }
+
+        ~Node() = default;
     };
 
     typedef std::pair<std::shared_ptr<Node>, int> Pin;
