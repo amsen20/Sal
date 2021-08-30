@@ -27,9 +27,7 @@ RESERVED_FUNCTION_IDS = {
     13: 'sub',
     14: 'pow',
     20: 'lt',
-    21: 'lte',
-    22: 'gt',
-    23: 'gte',
+    21: 'lte'
 }
 
 BIN_OP_CODE = {
@@ -42,9 +40,7 @@ BIN_OP_CODE = {
 
 COMPARE_CODE = {
     ast.Lt: 20,
-    ast.LtE: 21,
-    ast.Gt: 22,
-    ast.GtE: 23
+    ast.LtE: 21
 }
 
 TYPE_CODE = {

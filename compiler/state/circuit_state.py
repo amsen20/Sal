@@ -78,16 +78,14 @@ def get_join_gate(in1_wire, in2_wire, out_wire):
     return Gate(JOIN_GATE_ID, "join", [in1_wire, in2_wire], [out_wire])
 
 def get_compare_gate(op, out_wire, in1_wire, in2_wire):
-    func_id = COMPARE_CODE[type(op)]
-    if(func_id == COMPARE_CODE[ast.Gt]):
+    func_id = None
+    if(type(op) == ast.Gt):
         func_id = COMPARE_CODE[ast.Lt]
-        tmp_wire = in1_wire
-        in1_wire = in2_wire
-        in2_wire = tmp_wire
-    if(func_id == COMPARE_CODE[ast.GtE]):
+        in1_wire, in2_wire = in2_wire, in1_wire
+    if(type(op) == ast.GtE):
         func_id = COMPARE_CODE[ast.LtE]
-        tmp_wire = in1_wire
-        in1_wire = in2_wire
-        in2_wire = tmp_wire
+        in1_wire, in2_wire = in2_wire, in1_wire
+    if not func_id:
+        func_id = COMPARE_CODE[type(op)]
     func_name = RESERVED_FUNCTION_IDS[func_id]
     return Gate(func_id, func_name, [in1_wire, in2_wire], [out_wire])
