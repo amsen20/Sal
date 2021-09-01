@@ -2,7 +2,7 @@
 * TODO: for now there is no support for raising exceptions if two flow come to a same pin.
 */
 
-#define THREAD_NUM 2
+#define THREAD_NUM 1
 
 #include "vm.h"
 #include "../flags.h"
@@ -60,6 +60,9 @@ flow_out(
         auto cln = clone_lazy(q, node, pin.first);
         q.enqueue(Flow(value, state::Pin(cln, pin.second)));
     }
+#ifdef THREAD_DEBUG
+    std::cerr << value << " added.\n";
+#endif
 }
 
 void
@@ -100,6 +103,9 @@ job(
             auto pin_index = flow.second.second;
             auto prenode = node->prenode;
             auto box = prenode->box;
+#ifdef THREAD_DEBUG
+            std::cerr << "*** flow " << value << ", " << box->id << " *** \n";
+#endif
 
             if(box->solid) {
                 // TODO check pin should be none before.
@@ -111,6 +117,9 @@ job(
                     auto par_node = node->par;
 
                     if(main_node == par_node) {
+#ifdef THREAD_DEBUG
+                        std::cerr << index << ", " << value << "\n";
+#endif
                         outs[index] = value;
                         continue;
                     }
@@ -124,7 +133,7 @@ job(
                     continue;
                 }
 
-                if(!box->sync || node->filled_inputs == box->inputs_sz) {
+                if(!box->sync || node->filled_inputs.load() == box->inputs_sz) {
                     if(box->controller && !box->check(node->inputs))
                         continue;
 
@@ -151,9 +160,9 @@ job(
                 node
             );
         }while(q.try_dequeue(flow));
-        
+
         on --;
-        if (!on) {
+        if (!on.load()) {
             q.enqueue(state::Flow(nullptr, state::Pin(nullptr, -1)));
 
 #ifdef DEBUG
