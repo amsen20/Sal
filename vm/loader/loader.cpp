@@ -1,4 +1,5 @@
 #include "loader.h"
+#include "../flags.h"
 #include "../consts.h"
 #include "../builtin/builtin.h"
 #include "../utils/utils.h"
@@ -44,6 +45,10 @@ read_code(const char *path) {
 */
 std::pair<box_set, FUNC_ID>
 load_code(const char *path) {
+#ifdef MEASURE
+    auto start = clock();
+#endif
+
     auto code = read_code(path);
     std::map<FUNC_ID, std::shared_ptr<Box>> id_to_box = set_up();
     box_set boxes;
@@ -205,6 +210,10 @@ load_code(const char *path) {
 
         it = next;
     }
+
+#ifdef MEASURE
+    std::cerr << "\nLoad time: " << 1000000 * (clock()-start) / CLOCKS_PER_SEC << "ns\n";
+#endif
 
     return {boxes, main_id};
 }

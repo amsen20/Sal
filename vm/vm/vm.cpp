@@ -2,10 +2,10 @@
 * TODO: for now there is no support for raising exceptions if two flow come to a same pin.
 */
 
-#define DEBUG
 #define THREAD_NUM 2
 
 #include "vm.h"
+#include "../flags.h"
 #include "../utils/utils.h"
 #include "../state/state.h"
 #include "../concurrentqueue/blockingconcurrentqueue.h"
@@ -170,6 +170,10 @@ job(
 
 int
 vm::run(const std::pair<prestate::box_set, FUNC_ID> &boxes_and_main_id) {
+#ifdef MEASURE
+    auto start = clock();
+#endif
+
     auto boxes = boxes_and_main_id.first;
     auto main_id = boxes_and_main_id.second;
     Queue q;
@@ -223,6 +227,10 @@ vm::run(const std::pair<prestate::box_set, FUNC_ID> &boxes_and_main_id) {
 #ifdef DEBUG
     std::cerr << "finished." << "\n";
 #endif
-    
+
+#ifdef MEASURE
+    std::cerr << "\nRun time: " << 1000000 * (clock()-start) / CLOCKS_PER_SEC << "ns\n";
+#endif
+
     return RUN_OK;
 }
