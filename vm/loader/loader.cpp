@@ -37,7 +37,7 @@ read_code(const char *path) {
 /*
     <code> = <main func id><code body>
     <code body> = NULL | <code body><box desc>
-    <box desc> = <box header><graph desc><end gate>
+    <box desc> = <box length><box header><graph desc>
     <box header> = <box id><number of inputs><input wires><number of outputs><number of local vars><local var wires>
     <graph desc> = NULL | <gate><graph desc>
     <gate> = <gate id><gate input wires><gate output wires>
@@ -76,6 +76,7 @@ load_code(const char *path) {
     for(int it=offset ; it<code.size() ; ) { 
         int next = it;
         auto box = std::make_shared<Box>(false, 0, 0, 0);
+        box->sync = false;
         boxes.push_back(box);
         
         FUNC_ID box_id = __4bytes_to_int(&code[it]);
@@ -182,6 +183,7 @@ load_code(const char *path) {
             std::shared_ptr<Box> box = id_to_box[gate_id];
             it += sizeof(FUNC_ID);
             std::shared_ptr<Node> node = std::make_shared<Node>(box);
+            graph->add_node(node);
 
             for(int i=0 ; i<box->inputs_sz ; i++) {
                 WIRE_ID wire_id = __4bytes_to_int(&code[it]);
@@ -200,7 +202,6 @@ load_code(const char *path) {
         }
 
         box->graph = std::move(graph);
-        boxes.push_back(box);
 
         it = next;
     }

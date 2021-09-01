@@ -130,8 +130,8 @@ class FunctionDefImpl:
             circuit_state.add_gate(get_out_gate(wire_out))
         
         circuit_state.code = circuit_state.code[:length_index] + \
-            get_description_length(len(circuit_state.code)) + \
-                circuit_state.code[length_index:]
+            get_description_length(len(circuit_state.code) + 4) + \
+                circuit_state.code[length_index:] # 4 for length itself
 
         return circuit_state
     

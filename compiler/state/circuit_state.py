@@ -23,6 +23,17 @@ class Gate:
     
     def get_code(self) -> bytearray:
         code = get_function_bytearray(self.id)
+
+        if(self.id == CONSTANT_GATE_ID):
+            code += self.fan_in[0].to_bytes(1, 'big') # type id
+            value = self.fan_in[1]
+            if self.fan_in[0] == TYPE_CODE[int]:
+                code += value.to_bytes(4, 'big')
+            # TODO add list
+            
+            code += get_wire_bytearray(self.fan_out[0])
+            return code
+
         for wire_in in self.fan_in:
             code += get_wire_bytearray(wire_in) # Add features for constant values
         for wire_out in self.fan_out:
