@@ -3,6 +3,10 @@
 
 #include <memory>
 
+std::shared_ptr<Box> __add, __mul, __div, __not, __assign, __cond;
+std::shared_ptr<Box> __join, __sub, __in_pin, __out_pin, __power_pin;
+std::shared_ptr<Box> __pow, __lt, __lte;
+
 std::map<FUNC_ID, std::shared_ptr<Box>>
 set_up() {
     std::map<FUNC_ID, std::shared_ptr<Box>> id_to_box;
