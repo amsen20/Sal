@@ -412,6 +412,8 @@ class ConstantImpl:
     ) -> Set[ast.Name]:
         vars: Set[ast.Name] = set()
         return vars
+    
+    @classmethod
     def get_used_vars(
         cls,
         node: ast.Constant
@@ -651,7 +653,7 @@ class IfImpl:
         inherit_state: CircuitState
     ) -> CircuitState:
         circuit_state = cls.clone_inherit_state(inherit_state)
-        used_vars = cls.get_defined_vars(node)
+        used_vars = cls.get_used_vars(node)
         
         prev_var_to_wire = deepcopy(circuit_state.var_to_wire)
         cond_impl = type_to_class[type(node.test)] # TODO check it is testable or not
