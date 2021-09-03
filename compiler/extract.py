@@ -1,4 +1,5 @@
 import ast
+from state.function_state import FunctionState
 from copy import deepcopy
 from state.circuit_state import get_assign_gate, get_bin_op_gate, get_constant_gate
 from state.circuit_state import get_not_gate, get_cond_gate, get_compare_gate, get_join_gate
@@ -24,7 +25,7 @@ class ModuleImpl:
                 functions_data.append(subnode)
         
         return functions_data
-    
+
     @classmethod
     def clone_inherit_state(
         cls,
@@ -71,7 +72,31 @@ class ModuleImpl:
             subnode_vars = impl.get_defined_vars(subnode)
             vars = vars.union(subnode_vars)
         return vars
-            
+    
+    def get_used_vars(
+        cls,
+        node: ast.Module
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_used_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
+
+    @classmethod
+    def get_hidden_functions_data(cls, node: ast.Module) -> List[FunctionState]:
+        functions_data = []
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_functions_data = impl.get_hidden_functions_data(subnode)
+            functions_data += subnode_functions_data
+        return functions_data
+       
 @register_impl(type=ast.FunctionDef)
 class FunctionDefImpl:
     subnode_allowed_types = {ast.Assign, ast.Return, ast.If}
@@ -149,6 +174,34 @@ class FunctionDefImpl:
             vars = vars.union(subnode_vars)
         return vars
     
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.FunctionDef
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for arg in node.args: #TODO support arg types
+            vars.add(arg.arg)
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_used_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
+
+    @classmethod
+    def get_hidden_functions_data(cls, node: ast.FunctionDef) -> List[FunctionState]:
+        functions_data = []
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_functions_data = impl.get_hidden_functions_data(subnode)
+            functions_data += subnode_functions_data
+        return functions_data
+
+    
 
 @register_impl(type=ast.Assign)
 class AssignImpl:
@@ -206,6 +259,30 @@ class AssignImpl:
         for subnode in node.targets:
             vars.add(subnode.id)
         return vars
+    
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.Assign
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.targets:
+            vars.add(subnode)
+        impl = type_to_class[type(node.value)]
+        value_vars = impl.get_used_vars(node.value)
+        vars = vars.union(value_vars)
+        return vars
+    
+    @classmethod
+    def get_hidden_functions_data(cls, node: ast.Assign) -> List[FunctionState]:
+        functions_data = []
+        subnode = node.value #TODO multiple assign
+        impl = type_to_class[type(subnode)]
+        functions_data += impl.get_hiddin_functions_data(subnode)
+        return functions_data
+
+        
+    
 
 @register_impl(type=ast.BinOp)
 class BinOpImpl:
@@ -268,6 +345,36 @@ class BinOpImpl:
             subnode_vars = impl.get_defined_vars(subnode)
             vars = vars.union(subnode_vars)
         return vars
+    
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.BinOp
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        left = node.left
+        right = node.right
+        subnodes = [left, right]
+        for subnode in subnodes:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_used_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
+    
+    @classmethod
+    def get_hidden_functions_data(cls, node: ast.BinOp) -> List[FunctionState]:
+        functions_data = []
+        subnodes = [node.left, node.right]
+        for subnode in subnodes:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_functions_data = impl.get_hidden_functions_data(subnode)
+            functions_data += subnode_functions_data
+        return functions_data
+    
 
 @register_impl(type=ast.Constant)
 class ConstantImpl:
@@ -305,6 +412,17 @@ class ConstantImpl:
     ) -> Set[ast.Name]:
         vars: Set[ast.Name] = set()
         return vars
+    def get_used_vars(
+        cls,
+        node: ast.Constant
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        return vars
+    
+    @classmethod
+    def get_hidden_functions_data(cls, node: ast.Constant) -> List[FunctionState]:
+        functions_data = []
+        return functions_data
 
 
 @register_impl(type=ast.Return)
@@ -355,6 +473,31 @@ class ReturnImpl:
             vars = vars.union(subnode_vars)
         return vars
 
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.Return
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in [node.value]:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_used_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
+    
+    @classmethod
+    def get_hidden_functions_data(cls, node: ast.Return) -> List[FunctionState]:
+        functions_data = []
+        for subnode in [node.value]:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_functions_data = impl.get_hidden_functions_data(subnode)
+            functions_data += subnode_functions_data
+        return functions_data
+
 @register_impl(type=ast.Name)
 class NameImpl:
     subnode_allowed_types = {}
@@ -387,6 +530,20 @@ class NameImpl:
     ) -> Set[ast.Name]:
         vars: Set[ast.Name] = set()
         return vars
+
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.Name
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        vars.add(node.id)
+        return vars
+    
+    @classmethod
+    def get_hidden_functions_data(cls, node: ast.Name) -> List[FunctionState]:
+        functions_data = []
+        return functions_data
 
 @register_impl(type=ast.Call)
 class CallImpl:
@@ -446,10 +603,35 @@ class CallImpl:
             subnode_vars = impl.get_defined_vars(subnode)
             vars = vars.union(subnode_vars)
         return vars
+    
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.Call
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.args:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_used_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
+    
+    @classmethod
+    def get_hidden_functions_data(cls, node: ast.Call) -> List[FunctionState]:
+        functions_data = []
+        for subnode in node.args:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_functions_data = impl.get_hidden_functions_data(subnode)
+            functions_data += subnode_functions_data
+        return functions_data
 
 @register_impl(type=ast.If)
 class IfImpl:
-    subnode_allowed_types = {ast.Assign, ast.If, ast.Return}
+    subnode_allowed_types = {ast.Assign, ast.If, ast.Return, ast.While, ast.Call}
 
     @classmethod
     def clone_inherit_state(
@@ -520,6 +702,37 @@ class IfImpl:
             subnode_vars = impl.get_defined_vars(subnode)
             vars = vars.union(subnode_vars)
         return vars
+    
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.If
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_used_vars(subnode)
+            vars = vars.union(subnode_vars)
+        impl = type_to_class[type(node.test)]
+        test_vars = impl.get_used_vars(node.test)
+        vars = vars.union(test_vars)
+        return vars
+    
+    @classmethod
+    def get_hidden_functions_data(cls, node: ast.If) -> List[FunctionState]:
+        functions_data = []
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_functions_data = impl.get_hidden_functions_data(subnode)
+            functions_data += subnode_functions_data
+        impl = type_to_class[type(node.test)]
+        test_functions_data = impl.get_hidden_functions_data(node.test)
+        functions_data += test_functions_data
+        return functions_data
 
 @register_impl(type=ast.Compare)
 class CompareImpl:
@@ -573,6 +786,89 @@ class CompareImpl:
     ) -> Set[ast.Name]:
         vars: Set[ast.Name] = set()
         return vars
+    
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.Compare
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        subnodes = [node.left, node.comparators[0]]
+        for subnode in subnodes:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            vars = vars.union(impl.get_used_vars(subnode))
+        return vars
+    
+    @classmethod
+    def get_hidden_functions_data(cls, node: ast.Compare) -> List[FunctionState]:
+        functions_data = []
+        subnodes = [node.left, node.comparators[0]]
+        for subnode in subnodes:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_functions_data = impl.get_hidden_functions_data(subnode)
+            functions_data += subnode_functions_data
+        return functions_data
+
+@register_impl(type=ast.While)
+class WhileImpl:
+    
+    subnode_allowed_types = {ast.Assign, ast.If, ast.Return, ast.While, ast.Call}
+
+    @classmethod
+    def get_defined_vars(
+        cls,
+        node: ast.While
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_defined_vars(subnode)
+            vars = vars.union(subnode_vars)
+        return vars
+    
+    @classmethod
+    def get_used_vars(
+        cls,
+        node: ast.While
+    ) -> Set[ast.Name]:
+        vars: Set[ast.Name] = set()
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_vars = impl.get_used_vars(subnode)
+            vars = vars.union(subnode_vars)
+        impl = type_to_class[type(node.test)]
+        test_vars = impl.get_used_vars(node.test)
+        vars = vars.union(test_vars)
+        return vars
+    
+    @classmethod
+    def get_hidden_functions_data(cls, node: ast.While) -> List[FunctionState]:
+        functions_data = []
+        self_impl = type_to_class[type(node)]
+        self_name = str(node.lineno)
+        self_id = get_new_id(self_name)
+        self_args = self_impl.get_used_vars(node)
+        self_outs = self_impl.get_defined_vars(node)
+        self_data = FunctionState(self_id, self_name, self_args, len(self_outs))
+        functions_data.append(self_data)
+        for subnode in node.body:
+            if not is_allowed(cls, subnode):
+                raise NotAllowedSubnode
+            impl = type_to_class[type(subnode)]
+            subnode_functions_data = impl.get_hidden_functions_data(subnode)
+            functions_data += subnode_functions_data
+        test_impl = type_to_class[type(node.test)]
+        test_functions_data = test_impl.get_hidden_functions_data(node.test)
+        functions_data += test_functions_data
+        return functions_data
 
 def extract(c_ast):
     functions = ModuleImpl.get_functions_data(c_ast)
