@@ -1,5 +1,6 @@
 /*
-* TODO: for now there is no support for raising exceptions if two flow come to a same pin.
+ * TODO: for now there is no support for raising exceptions if two flow come to a same pin.
+ * TODO: for now constant values should not be entered as function arguments.
 */
 
 #define THREAD_NUM 1
@@ -13,8 +14,6 @@
 
 #include <thread>
 #include <atomic>
-#include <mutex>
-#include <condition_variable>
 
 // #ifdef DEBUG
 #   include <iostream>
