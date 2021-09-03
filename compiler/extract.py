@@ -539,7 +539,7 @@ class NameImpl:
         node: ast.Name
     ) -> Set[ast.Name]:
         vars: Set[ast.Name] = set()
-        vars.add(node.id)
+        vars.add(node)
         return vars
     
     @classmethod
@@ -653,7 +653,7 @@ class IfImpl:
         inherit_state: CircuitState
     ) -> CircuitState:
         circuit_state = cls.clone_inherit_state(inherit_state)
-        used_vars = cls.get_used_vars(node)
+        used_vars = [used_var.id for used_var in cls.get_used_vars(node)]
         
         prev_var_to_wire = deepcopy(circuit_state.var_to_wire)
         cond_impl = type_to_class[type(node.test)] # TODO check it is testable or not
@@ -695,7 +695,7 @@ class IfImpl:
     def get_defined_vars(
         cls,
         node: ast.If
-    ) -> Set[ast.Name]:
+    ) -> Set[ast.Name]: # TODO it's broken it returns strs
         vars: Set[ast.Name] = set()
         for subnode in node.body:
             if not is_allowed(cls, subnode):
