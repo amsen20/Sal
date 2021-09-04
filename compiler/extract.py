@@ -653,7 +653,7 @@ class IfImpl:
         inherit_state: CircuitState
     ) -> CircuitState:
         circuit_state = cls.clone_inherit_state(inherit_state)
-        used_vars = [used_var.id for used_var in cls.get_used_vars(node)]
+        used_vars = list(set([used_var.id for used_var in cls.get_used_vars(node)]))
         
         prev_var_to_wire = deepcopy(circuit_state.var_to_wire)
         cond_impl = type_to_class[type(node.test)] # TODO check it is testable or not
@@ -679,23 +679,27 @@ class IfImpl:
             circuit_state.add_gates(subnode_circuit_state.gate_list)
             circuit_state.out_wires += subnode_circuit_state.out_wires
         
+        not_cond_wire = get_new_id()
+        circuit_state.add_gate(get_not_gate(cond_wire, not_cond_wire))
+
+        new_var_to_wire = {}
         for used_var in used_vars:
             prev_var_wire = prev_var_to_wire[used_var]
             curr_var_wire = circuit_state.var_to_wire[used_var]
-            not_cond_wire = get_new_id()
-            circuit_state.add_gate(get_not_gate(cond_wire, not_cond_wire))
             main_var_wire = get_new_id()
             circuit_state.add_gate(get_cond_gate(prev_var_wire, not_cond_wire, main_var_wire))
             new_wire = get_new_id()
             circuit_state.add_gate(get_join_gate(main_var_wire, curr_var_wire, new_wire))
+            new_var_to_wire[used_var] = new_wire
         
+        circuit_state.var_to_wire = merge_envs(circuit_state.var_to_wire, new_var_to_wire)
         return circuit_state
 
     @classmethod
     def get_defined_vars(
         cls,
         node: ast.If
-    ) -> Set[ast.Name]: # TODO it's broken it returns strs
+    ) -> Set[ast.Name]: # TODO it's broken it returns strs.
         vars: Set[ast.Name] = set()
         for subnode in node.body:
             if not is_allowed(cls, subnode):
@@ -709,7 +713,7 @@ class IfImpl:
     def get_used_vars(
         cls,
         node: ast.If
-    ) -> Set[ast.Name]:
+    ) -> Set[ast.Name]: # TODO it's borken it returns multiple same var.
         vars: Set[ast.Name] = set()
         for subnode in node.body:
             if not is_allowed(cls, subnode):
