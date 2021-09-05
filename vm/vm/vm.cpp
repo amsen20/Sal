@@ -237,7 +237,7 @@ vm::run(const std::pair<prestate::box_set, FUNC_ID> &boxes_and_main_id) {
 #endif
 
 #ifdef MEASURE
-    std::cerr << "\nRun time: " << 1000000 * (clock()-start) / CLOCKS_PER_SEC << "ns\n";
+    std::cerr << "\nRun time: " << 1000000 * (clock()-start) / CLOCKS_PER_SEC << " ms\n";
 #endif
 
     return RUN_OK;
