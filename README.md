@@ -79,6 +79,7 @@ to solve them by partitioning algorithms and precompiling techniques.
   ./salvm path/to/sal/file
   ```
 * Input python codes
+
   For now, the compiler input python file should only contain simple arithmetic functions, recursion is allowed.
   Only integers are allowed for data types.
   There should be a `main` function that will be executed by VM.
@@ -93,20 +94,19 @@ to solve them by partitioning algorithms and precompiling techniques.
   def main(n):
       return fib(n)
   ```
-<!-- ROADMAP -->
+
 ## Roadmap
 
-- [x] Add Changelog
-- [x] Add back to top links
-- [ ] Add Additional Templates w/ Examples
-- [ ] Add "components" document to easily copy & paste sections of the readme
-- [ ] Multi-language Support
-    - [ ] Chinese
-    - [ ] Spanish
+- [x] Add compiler
+- [x] Add vm
+- [x] Add recursion and `if` (after this, vm will be turing complete)
+- [ ] Add `List` data type to compiler
+- [ ] Add `while` to compiler
+- [ ] Fix vm efficiency problems
+    - [ ] Add partitioning algorithms
+    - [ ] Add precompiling techniques
 
 See the [open issues](https://github.com/othneildrew/Best-README-Template/issues) for a full list of proposed features (and known issues).
-
-<p align="right">(<a href="#top">back to top</a>)</p>
 
 
 ## License
