@@ -70,41 +70,25 @@
 ## About The Project
 
 In this project, we are trying to compile arithmetic python codes to Executable Directed Acyclic Graph(EDAG)s and run them as EDAGs.
+
 EDAGs are acyclic so running them in a parallel manner on multiple processors would be much easier compared to normal code.
 Also EDAGs are capable of being configured on FPGAs or any other partially reconfigurable hardwares.
+
 Becuase these days common processors are based Von Neuwmann design, Running EDGAs on them will cause some efficiency problems that we are trying
 to solve them by partitioning algorithms and precompiling techniques.
 
 ### Built With
 
-This section should list any major frameworks/libraries used to bootstrap your project. Leave any add-ons/plugins for the acknowledgements section. Here are a few examples.
-
-* [Next.js](https://nextjs.org/)
-* [React.js](https://reactjs.org/)
-* [Vue.js](https://vuejs.org/)
-* [Angular](https://angular.io/)
-* [Svelte](https://svelte.dev/)
-* [Laravel](https://laravel.com)
-* [Bootstrap](https://getbootstrap.com)
-* [JQuery](https://jquery.com)
-
-<p align="right">(<a href="#top">back to top</a>)</p>
-
-
-
-<!-- GETTING STARTED -->
-## Getting Started
-
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
+* [C++(clang)](https://clang.llvm.org/)
+* [Python](https://www.python.org/)
+* [Cmake](https://cmake.org/)
 
 ### Prerequisites
 
-This is an example of how to list things you need to use the software and how to install them.
-* npm
-  ```sh
-  npm install npm@latest -g
-  ```
+* Python (>=3.8)
+* Cmake (>=3.21.1)
+* C++ (>=17)
+* Clang (>=12)
 
 ### Installation
 
