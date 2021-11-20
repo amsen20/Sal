@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <map>
+#include <cmath>
 
 using prestate::Box;
 
