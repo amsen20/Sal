@@ -95,6 +95,18 @@ to solve them by partitioning algorithms and precompiling techniques.
       return fib(n)
   ```
 
+## Compiled Sal file structure
+
+A Sal file is a byte-coded file which describes a EDAG. The file structure follows below grammar:
+```
+<code> = <main func id><code body>
+<code body> = NULL | <code body><box desc>
+<box desc> = <box length><box header><graph desc>
+<box header> = <box id><number of inputs><input wires><number of outputs><number of local vars><local var wires>
+<graph desc> = NULL | <gate><graph desc>
+<gate> = <gate id><gate input wires><gate output wires>
+```
+
 ## Roadmap
 
 - [x] Add compiler
