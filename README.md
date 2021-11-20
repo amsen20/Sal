@@ -26,7 +26,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/amsen20/Sal">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
+    <img src="images/SAL.png" alt="Logo" width="160" height="160">
   </a>
 
   <h3 align="center">Sal</h3>
