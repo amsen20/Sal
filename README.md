@@ -97,7 +97,7 @@ to solve them by partitioning algorithms and precompiling techniques.
 
 ## Compiled Sal file structure
 
-A Sal file is a byte-coded file which describes a EDAG. The file structure follows below grammar:
+A Sal file is a byte-coded file which describes an EDAG. The file structure follows below grammar:
 ```
 <code> = <main func id><code body>
 <code body> = NULL | <code body><box desc>
